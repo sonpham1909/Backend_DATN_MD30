@@ -1,0 +1,183 @@
+const bcrypt = require('bcrypt');
+const User = require('../models/User');
+const jwt = require('jsonwebtoken');
+
+
+const authController = {
+    //register
+    registerUser: async (req, res) =>{
+        try {
+            const salt = await bcrypt.genSalt(10);
+            const hashed =  await bcrypt.hash(req.body.password, salt);
+
+            //create new user
+            const newUser = await new User({
+                username: req.body.username,
+                email: req.body.email,
+                password: hashed,
+                phone_number: req.body.phone_number,
+                full_name: req.body.full_name
+            });
+
+            const user = await newUser.save();
+            res.status(200).json(user);
+        } catch (error) {
+            res.status(500).json(error);
+        }
+    },
+
+    generateAccessToken: (user) =>{
+        return jwt.sign(
+            {
+                id: user.id,
+                admin: user.admin
+            },
+            process.env.ACCESS_TOKEN_KEY,
+            {expiresIn: "3h"}
+        );
+    },
+    generateRefreshToken: (user) =>{
+        return jwt.sign(
+            {
+                id: user.id,
+                admin: user.admin
+            },
+            process.env.REFRESH_TOKEN_KEY,
+            {expiresIn: "300d"}
+        );
+    },
+
+    //login
+    loginUser: async(req, res) => {
+        try {
+            const user = await User.findOne({username: req.body.username});
+            if(!req.body.username || !req.body.password){
+                return res.status(400).json({ message: "Tên đăng nhập và mật khẩu không được để trống." });
+            }
+            if(!user){
+                console.log("wrong username or password");
+                return res.status(401).json({message: "wrong username or password!"});
+                
+            }
+            const validPassword = await bcrypt.compare(req.body.password, user.password);
+            if(!validPassword){
+                console.log('Wrong username or password');
+                
+                return res.status(401).json({message: "wrong username or password!"});
+
+            }
+
+            //Correct
+            if(user && validPassword){
+                const accessToken =  authController.generateAccessToken(user);
+
+                //refreshToken
+                const refreshToken = authController.generateRefreshToken(user);
+
+                //save refreshToken in database 
+                user.refreshToken = refreshToken;
+                await user.save();
+
+                //set cookie with refreshtoken
+                res.cookie("refreshToken", refreshToken,{
+                    httpOnly: true,
+                    secure: false,
+                    path:'/',
+                    sameSite: "strict",
+
+                });
+
+                const {password, ...others} = user._doc;
+                console.log('Login successfully');
+                res.status(200).json({...others, accessToken});
+
+
+            }
+        } catch (error) {
+            console.error("Internal Server Error:", error);
+            res.status(500).json({ message: "Internal Server Error" });
+        }
+    },
+     //REDIS
+     requestRefreshToken: async (req, res) => {
+        const refreshToken = req.cookies.refreshToken;
+
+        if (!refreshToken) {
+            return res.status(401).json("You're not authenticated");
+        }
+
+        // Tìm người dùng có refresh token tương ứng
+        const user = await User.findOne({ refreshToken });
+
+
+        if (!user) {
+            return res.status(403).json("Refresh token is not valid");
+        }
+
+        // Xác thực refresh token
+        jwt.verify(refreshToken, process.env.REFRESH_TOKEN_KEY, (err, decoded) => {
+            if (err || user.id !== decoded.id) {
+                return res.status(403).json("Refresh token is not valid");
+            }
+
+            // Tạo mới access token và refresh token
+            const newAccessToken = authController.generateAccessToken(user);
+            const newRefreshToken = authController.generateRefreshToken(user);
+
+
+            // Cập nhật refresh token trong cơ sở dữ liệu
+            user.refreshToken = newRefreshToken;
+            user.save();
+
+            // Lưu refresh token mới vào cookie
+            res.cookie("refreshToken", newRefreshToken, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === "production",
+                path: "/",
+                sameSite: "strict",
+            });
+
+            // Trả về access token mới
+            res.status(200).json({ accessToken: newAccessToken });
+        });
+    },
+    logoutUser: async (req, res) => {
+        try {
+            // Lấy refresh token từ cookie
+            const refreshToken = req.cookies.refreshToken;
+
+            // Nếu không có refresh token trong cookie, trả về lỗi
+            if (!refreshToken) {
+                return res.status(401).json("You're not authenticated");
+            }
+
+            // Tìm người dùng dựa trên refresh token trong cơ sở dữ liệu
+            const user = await User.findOne({ refreshToken });
+
+            if (!user) {
+                return res.status(403).json("Refresh token is not valid");
+            }
+
+            // Xóa refresh token khỏi cơ sở dữ liệu
+            user.refreshToken = null;
+            await user.save();
+
+            // Xóa refresh token khỏi cookie
+            res.clearCookie("refreshToken", {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === "production",
+                path: "/",
+                sameSite: "strict",
+            });
+
+            // Phản hồi thành công
+            return res.status(200).json("Logout successful");
+        } catch (error) {
+            res.status(500).json("Internal server error");
+        }
+    }
+
+
+}
+
+module.exports = authController;

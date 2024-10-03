@@ -7,6 +7,12 @@ var router = express.Router();
 /* GET users listing. */
 router.get('/',middlewareController.verifyToken,userController.getAllUser);
 
+//searchUser
+router.get('/search',middlewareController.verifyToken,userController.searchUser);
+
+//Add user
+router.post('/add_user',middlewareController.verifyAdminToken,middlewareController.verifyToken,userController.AddUser);
+
 //update avatar
 router.put('/:id/avatar',middlewareController.verifyToken,uploadphoto.array('avatar', 1),resizeAndUploadImage,userController.updateAvatar);
 

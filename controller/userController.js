@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const bcrypt = require('bcrypt')
 
 const userController = {
     //getAlluser
@@ -11,6 +12,34 @@ const userController = {
             
         }
     },
+     AddUser: async (req, res) =>{
+        try {
+
+            const salt = await bcrypt.genSalt(10);
+            const hashed =  await bcrypt.hash(req.body.password, salt);
+         
+
+            //create new user
+            const newUser = await new User({
+                username: req.body.username,
+                password: hashed,
+                email: req.body.email,
+                
+                
+                phone_number: req.body.phone_number,
+                full_name: req.body.full_name,
+                admin:req.body.admin
+            });
+
+            const user = await newUser.save();
+            res.status(200).json(user);
+        } catch (error) {
+            console.error('Error while adding user:', error); // Log lỗi
+            res.status(500).json(error);
+        }
+    },
+
+
     //update Avatar
     updateAvatar: async (req, res) =>{
         try{
@@ -86,6 +115,18 @@ const userController = {
         } catch (error) {
             res.status(500).json({ message: 'Error deleting user', error: error.message });
         }
+    },
+
+    searchUser: async(req,res)=>{
+        try {
+            const { keyword } = req.query;
+            const regex = new RegExp(keyword, 'i'); // Tìm kiếm không phân biệt hoa thường
+            const users = await User.find({ $or: [{ username: regex }, { email: regex }] });
+            res.json(users);
+        } catch (error) {
+            res.status(500).json({ message: 'Lỗi khi tìm kiếm người dùng' });
+        }
+        //Check search
     }
 }
 

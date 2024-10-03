@@ -11,7 +11,7 @@ require('dotenv').config(); // Load biến môi trường từ .env
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
 var authRouter = require('./routes/auth');
-
+var CategoryRouter=require('./routes/Category');
 var app = express();
 
 // view engine setup
@@ -28,6 +28,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/', indexRouter);
 app.use('/v1/users', usersRouter);
 app.use('/v1/auth',authRouter);
+app.use('/v1/categorys',CategoryRouter);
 
 database().then(() => {
   console.log('Connected to the database');

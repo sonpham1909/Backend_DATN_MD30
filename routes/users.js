@@ -14,12 +14,29 @@ router.get('/search',middlewareController.verifyToken,userController.searchUser)
 router.post('/add_user',middlewareController.verifyAdminToken,middlewareController.verifyToken,userController.AddUser);
 
 //update avatar
-router.put('/:id/avatar',middlewareController.verifyToken,uploadphoto.array('avatar', 1),resizeAndUploadImage,userController.updateAvatar);
+router.put('/:id/avatar',middlewareController.verifyToken,middlewareController.checkUserBlock,uploadphoto.array('avatar', 1),resizeAndUploadImage,userController.updateAvatar);
 
 //update user
-router.put('/:id/update_user',middlewareController.verifyToken,userController.updateUser);
+router.put('/:id/update_user',middlewareController.verifyToken,middlewareController.checkUserBlock,userController.updateUser);
 
 //delete user
-router.delete('/:id/delete_user',middlewareController.verifyAdminToken,middlewareController.verifyToken,userController.deleteUser)
+router.put('/:id/block_user',
+    middlewareController.verifyAdminToken,
+    middlewareController.verifyToken,
+    middlewareController.checkUserBlock,
+    userController.blockUser);
+
+//add_role
+router.post('/:id/add_role',
+    // middlewareController.verifyToken,
+    // middlewareController.verifyAdminToken,
+    // middlewareController.checkUserBlock,
+    userController.addRoleToUser);
+
+//delete role user
+router.delete('/:id/delete_role',middlewareController.verifyToken,middlewareController.verifyAdminToken,middlewareController.checkUserBlock,userController.removeRoleFromUser);
+
+//get role user
+router.get('/:id/get_role_user',userController.getUserRoleById);
 
 module.exports = router;

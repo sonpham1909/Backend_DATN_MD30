@@ -2,14 +2,12 @@ const mongoose = require('mongoose');
 
 const ProductSubCategorySchema = new mongoose.Schema({
     sub_categories_id: { 
-        type: mongoose.Schema.Types.ObjectId, // Sử dụng ObjectId để liên kết với bảng subcategories
-        required: true,
-        ref: 'SubCategory' // Tham chiếu tới bảng SubCategory nếu bạn có schema đó
+        type: String,
     },
     product_id: { 
-        type: mongoose.Schema.Types.ObjectId, // Sử dụng ObjectId để liên kết với bảng products
-        required: true,
-        ref: 'Product' // Tham chiếu tới bảng Product nếu bạn có schema đó
+        type: String, 
+        unique: true, // Thêm ràng buộc unique
+        required: true
     },
 }, { timestamps: true });
 

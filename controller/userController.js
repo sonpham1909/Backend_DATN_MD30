@@ -37,6 +37,10 @@ const userController = {
 
             const salt = await bcrypt.genSalt(10);
             const hashed =  await bcrypt.hash(req.body.password, salt);
+            const userRole = await Role.findOne({ name: 'user' });
+            if (!userRole) {
+                return res.status(400).json({ message: 'Role not found' });
+            }
          
 
             //create new user
@@ -44,14 +48,21 @@ const userController = {
                 username: req.body.username,
                 password: hashed,
                 email: req.body.email,
-                
-                
                 phone_number: req.body.phone_number,
                 full_name: req.body.full_name,
-                admin:req.body.admin
+              
+            });
+            const user = await newUser.save();
+
+            const userRoleEntry = new UserRole({
+                userId: user._id,
+                roleId: userRole._id
             });
 
-            const user = await newUser.save();
+            await userRoleEntry.save();
+
+
+           
             res.status(200).json(user);
         } catch (error) {
             console.error('Error while adding user:', error); // Log lỗi
@@ -142,12 +153,13 @@ const userController = {
         }
     },
 
-    searchUser: async(req,res)=>{
+    searchUser: async (req, res) => {
         try {
-            const { keyword } = req.query;
+            const { keyword, roleName } = req.query; // Lấy từ query params
             const regex = new RegExp(keyword, 'i'); // Tìm kiếm không phân biệt hoa thường
+    
+            // Tìm tất cả người dùng
             const users = await User.find({ $or: [{ username: regex }, { email: regex }] });
-          
     
             // Lấy vai trò cho từng người dùng
             const usersWithRoles = await Promise.all(users.map(async (user) => {
@@ -164,13 +176,18 @@ const userController = {
                 };
             }));
     
+            // Nếu có vai trò được chỉ định trong query, lọc người dùng theo vai trò
+            if (roleName) {
+                const filteredUsers = usersWithRoles.filter(user => user.roles.includes(roleName));
+                return res.status(200).json(filteredUsers);
+            }
+    
             // Trả về danh sách người dùng kèm theo vai trò
             res.status(200).json(usersWithRoles);
-           
+    
         } catch (error) {
             res.status(500).json({ message: 'Lỗi khi tìm kiếm người dùng' });
         }
-        //Check search
     },
     addRoleToUser: async (req, res) => {
         try {

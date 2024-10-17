@@ -23,5 +23,13 @@ router.post("/create_variant",
     productController.addVariant
 );
 
+//Delete variants
+router.delete('/:productId/variants/:variantId', productController.deleteVariant);
+
+router.put('/update_product/:id',uploadphoto.array('imageUrls',10),resizeAndUploadImage, productController.updateProduct);
+
+//deleteProduct
+router.delete('/:id/delete_product',productController.deleteProduct);
+
 
 module.exports = router;

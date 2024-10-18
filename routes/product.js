@@ -1,11 +1,14 @@
 var express = require('express');
 const { uploadphoto, resizeAndUploadImage } = require('../controller/imageUploadMiddleware');
 const productController = require('../controller/productController');
+const middlewareController = require('../controller/middlewareController');
 var router = express.Router();
 
 
 //getAll Product
 router.get('/',productController.get_all_product);
+
+router.get('/search_products', productController.searchProduct);
 
 //get product by Id
 router.get('/:id', productController.getProductById);
@@ -30,6 +33,9 @@ router.put('/update_product/:id',uploadphoto.array('imageUrls',10),resizeAndUplo
 
 //deleteProduct
 router.delete('/:id/delete_product',productController.deleteProduct);
+
+//searchProduct
+
 
 
 module.exports = router;

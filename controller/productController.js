@@ -3,6 +3,7 @@ const Category = require("../models/Category");
 const Product = require("../models/Product");
 const cloudinary = require('../config/cloudinaryConfig');
 const Product_sub_categories = require("../models/Product_sub_categories");
+const removeAccents = require('remove-accents');
 
 const productController = {
 
@@ -15,21 +16,21 @@ const productController = {
                 // Tính tổng số lượng từ các biến thể
                 const totalQuantity = product.variants.reduce((sum, variant) => sum + variant.quantity, 0);
 
-                if(product.variants.length>0){
+                if (product.variants.length > 0) {
 
-                     // Lấy tất cả giá của các variant
-                     const prices = product.variants.map(variant => variant.price);
+                    // Lấy tất cả giá của các variant
+                    const prices = product.variants.map(variant => variant.price);
 
-                     // Tìm giá thấp nhất
-                     const lowestPrice = Math.min(...prices);
+                    // Tìm giá thấp nhất
+                    const lowestPrice = Math.min(...prices);
 
-                     return {
+                    return {
                         ...product._doc, // Sao chép toàn bộ thông tin sản phẩm
                         totalQuantity, // Thêm tổng số lượng vào sản phẩm
                         lowestPrice
                     };
 
-                }else{
+                } else {
                     return {
                         ...product._doc, // Sao chép toàn bộ thông tin sản phẩm
                         totalQuantity,
@@ -37,9 +38,9 @@ const productController = {
                     };
 
 
-                    
+
                 }
-                
+
             });
             res.status(200).json(productsWithTotalQuantity);
 
@@ -56,8 +57,8 @@ const productController = {
             // Kiểm tra dữ liệu đầu vào
             const { name, variants, material, description } = req.body;
 
-          
-         
+
+
             // Kiểm tra các biến thể có đúng định dạng không
 
 
@@ -70,7 +71,7 @@ const productController = {
             // Tạo sản phẩm mới
             const newProduct = new Product({
                 name,
-               // Tham chiếu đến ID danh mục
+                // Tham chiếu đến ID danh mục
                 variants,
                 material,
                 description,
@@ -131,7 +132,7 @@ const productController = {
 
             if (!product) {
                 console.log('Sản phẩm không tồn tại');
-                
+
                 return res.status(404).json({ message: 'Sản phẩm không tồn tại' });
             }
 
@@ -191,19 +192,19 @@ const productController = {
             // Xử lý các hình ảnh muốn xóa
             if (req.body.imagesToDelete) {
                 const imagesToDelete = JSON.parse(req.body.imagesToDelete); // Lấy danh sách các hình ảnh muốn xóa
-            
+
                 // Lọc các hình ảnh không bị xóa
                 updatedData.imageUrls = (updatedData.imageUrls || product.imageUrls || []).filter(url => !imagesToDelete.includes(url));
-            
+
                 // Xóa các hình ảnh không còn cần thiết trên Cloudinary
                 for (const imageUrl of imagesToDelete) {
                     console.log('imageUrl:', imageUrl); // Kiểm tra URL
-            
+
                     // Sử dụng biểu thức chính quy để lấy public ID từ URL
                     const publicIdMatch = imageUrl.match(/\/([^\/]*)\.[^\/]*$/);
                     const publicId = publicIdMatch ? publicIdMatch[1] : null; // public ID sẽ là nhóm thứ nhất nếu có match
                     console.log('publicId:', publicId); // Kiểm tra public ID
-            
+
                     if (publicId) { // Kiểm tra nếu publicId có giá trị
                         await cloudinary.uploader.destroy(publicId); // Gọi API xóa trên Cloudinary
                     } else {
@@ -211,7 +212,7 @@ const productController = {
                     }
                 }
             }
-            
+
 
             // Chỉ cập nhật trường nếu nó có giá trị mới
             Object.assign(product, updatedData);
@@ -254,6 +255,60 @@ const productController = {
             return res.status(500).json({ message: 'Đã xảy ra lỗi khi xóa sản phẩm', error: error.message });
         }
     },
+    searchProduct: async (req, res) => {
+        try {
+            const { keyword } = req.query; // Lấy từ query params
+
+            let query = {}; // Tạo query rỗng nếu không có từ khóa
+
+            if (keyword) {
+                const regex = new RegExp(keyword, 'i'); // Tìm kiếm không phân biệt hoa thường
+                query = {
+                    $or: [
+                        { name: { $regex: regex } },
+                        { description: { $regex: regex } }
+                    ]
+                };
+            }
+
+            // Tìm sản phẩm theo keyword hoặc trả về tất cả sản phẩm
+            const products = await Product.find(query);
+
+            const productsWithTotalQuantity = products.map(product => {
+                // Kiểm tra biến thể có tồn tại và tính tổng số lượng
+                const totalQuantity = product.variants?.reduce((sum, variant) => sum + variant.quantity, 0) || 0;
+
+                if (product.variants?.length > 0) {
+                    // Lấy tất cả giá của các biến thể
+                    const prices = product.variants.map(variant => variant.price);
+
+                    // Tìm giá thấp nhất
+                    const lowestPrice = Math.min(...prices);
+
+                    return {
+                        ...product._doc, // Sao chép toàn bộ thông tin sản phẩm
+                        totalQuantity,   // Thêm tổng số lượng vào sản phẩm
+                        lowestPrice      // Thêm giá thấp nhất
+                    };
+
+                } else {
+                    return {
+                        ...product._doc,  // Sao chép toàn bộ thông tin sản phẩm
+                        totalQuantity,    // Thêm tổng số lượng
+                        lowestPrice: null // Không có giá nếu không có biến thể
+                    };
+                }
+            });
+
+            // Trả về danh sách sản phẩm kèm theo tổng số lượng và giá thấp nhất
+            res.status(200).json(productsWithTotalQuantity);
+
+        } catch (error) {
+            console.log(error); // In lỗi ra console để xem chi tiết
+            res.status(500).json({ message: 'Lỗi khi tìm kiếm sản phẩm', error: error.message });
+        }
+    },
+
 
 
 

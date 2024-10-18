@@ -26,10 +26,29 @@ const orderSchemma = mongoose.Schema(
             ref:'ShippingMethod',
             require:true
 
-        }
+        },
+        payment_method_id:{
+            type: mongoose.Schema.Types.ObjectId,
+            ref:'PaymentMethod',
+            require:true
+
+        },
+        total_amount:{
+            type: Number,
+            require: true
+
+        },
+        cancelReason: {
+            type: String,
+            default: '' // Trường lý do hủy
+        },
 
 
 
 
-    }
-)
+
+    },{timestamps: true}
+);
+
+
+module.exports = mongoose.model('Orders',orderSchemma);

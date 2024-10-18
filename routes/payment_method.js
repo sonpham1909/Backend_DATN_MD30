@@ -6,8 +6,7 @@ var router = express.Router();
 // Tạo phương thức thanh toán
 router.post(
     "/create_payment_method",
-    middlewareController.verifyToken,
-    middlewareController.verifyAdminToken,
+   
     PaymentMethodController.createPaymentMethod // Hàm xử lý tạo phương thức thanh toán
 );
 

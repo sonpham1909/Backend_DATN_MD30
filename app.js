@@ -22,6 +22,7 @@ var Sub_CategoryRouter=require('./routes/sub_categorys');
 var Product_sub_CategoryRouter=require('./routes/product_sub_categories');
 
 var ProductRouter = require('./routes/product');
+var OrderRouter = require('./routes/order');
 
 
 var app = express();
@@ -47,7 +48,9 @@ app.use('/v1/subcategorys',Sub_CategoryRouter);
 app.use('/v1/ProductsubCategorys',Product_sub_CategoryRouter);
 
 app.use('/v1/products',ProductRouter);
-app.use('/v1/shippingMethods', ShippingMethodRouter)
+app.use('/v1/shippingMethods', ShippingMethodRouter);
+app.use('/v1/orders', OrderRouter);
+
 
 database().then(() => {
   console.log('Connected to the database');

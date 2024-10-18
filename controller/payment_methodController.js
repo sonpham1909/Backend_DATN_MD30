@@ -7,7 +7,7 @@ const PaymentMethodController = {
             const newPaymentMethod = new PaymentMethod({
                 name: req.body.name,
                 description: req.body.description,
-                is_active: req.body.is_active !== undefined ? req.body.is_active : true // Mặc định là true nếu không có giá trị
+               
             });
             const savedPaymentMethod = await newPaymentMethod.save();
             res.status(201).json(savedPaymentMethod);

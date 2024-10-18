@@ -15,6 +15,9 @@ var CategoryRouter=require('./routes/category');
 var AddressRouter=require('./routes/address');
 var ShippingMethodRouter=require('./routes/shipping_method');
 
+
+var PaymentMethodRouter=require('./routes/payment_method');
+
 var Sub_CategoryRouter=require('./routes/sub_categorys');
 var Product_sub_CategoryRouter=require('./routes/product_sub_categories');
 
@@ -39,7 +42,7 @@ app.use('/v1/users', usersRouter);
 app.use('/v1/auth',authRouter);
 app.use('/v1/categorys',CategoryRouter);
 app.use('/v1/address',AddressRouter);
-
+app.use('/v1/PaymentMethod',PaymentMethodRouter);
 app.use('/v1/subcategorys',Sub_CategoryRouter);
 app.use('/v1/ProductsubCategorys',Product_sub_CategoryRouter);
 

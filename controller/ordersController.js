@@ -1,4 +1,5 @@
 
+const Address = require('../models/Address');
 const Order = require('../models/order');
 const Order_items = require('../models/Order_items');
 const Product = require('../models/Product');
@@ -8,13 +9,16 @@ const ordersController = {
     getAllOrders: async (req, res) => {
         try {
             const orders = await Order.find()
-            .populate('user_id', 'full_name') // Lấy first_name và last_name từ User
+            .populate('user_id', 'full_name email') // Lấy first_name và last_name từ User
+            .populate('address_id', 'recipientPhone')
             .exec();
 
         // Thêm full_name vào từng đơn hàng
         const ordersWithFullName = orders.map(order => ({
             ...order._doc, // Lấy tất cả thông tin của order
-            full_name: order.user_id.full_name // Tạo full_name
+            full_name: order.user_id?.full_name, // Kiểm tra user_id tồn tại
+            email: order.user_id?.email, // Kiểm tra email tồn tại
+            recipientPhone: order.address_id?.recipientPhone // Kiểm tra address_id và recipientPhone
         }));
 
         res.status(200).json(ordersWithFullName);

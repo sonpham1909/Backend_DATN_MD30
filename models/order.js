@@ -8,7 +8,7 @@ const orderSchemma = mongoose.Schema(
             ref: 'User',
             require: true
         },
-        adress_id:{
+        address_id:{
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Address',
             require:true

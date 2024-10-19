@@ -4,7 +4,6 @@ const jwt = require('jsonwebtoken');
 const Role = require('../models/Role');
 const UserRole = require('../models/UserRole');
 
-
 const authController = {
     //register
     registerUser: async (req, res) => {

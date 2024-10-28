@@ -13,6 +13,10 @@ router.post(
 // Lấy tất cả địa chỉ
 router.get('/', middlewareController.verifyToken, AddressController.getAllAddresses);
 
+
+//lấy địa chit theo người dùng
+router.post('/get_address_by_user', AddressController.getAllAddressesByUserId);
+
 // Cập nhật địa chỉ
 router.put(
     '/:id/update_address',

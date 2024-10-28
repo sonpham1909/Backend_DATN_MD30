@@ -8,7 +8,7 @@ const orderSchemma = mongoose.Schema(
             ref: 'User',
             require: true
         },
-        adress_id:{
+        address_id:{
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Address',
             require:true
@@ -26,10 +26,29 @@ const orderSchemma = mongoose.Schema(
             ref:'ShippingMethod',
             require:true
 
-        }
+        },
+        payment_method_id:{
+            type: mongoose.Schema.Types.ObjectId,
+            ref:'PaymentMethod',
+            require:true
+
+        },
+        total_amount:{
+            type: Number,
+            require: true
+
+        },
+        cancelReason: {
+            type: String,
+            default: '' // Trường lý do hủy
+        },
 
 
 
 
-    }
-)
+
+    },{timestamps: true}
+);
+
+
+module.exports = mongoose.model('Orders',orderSchemma);

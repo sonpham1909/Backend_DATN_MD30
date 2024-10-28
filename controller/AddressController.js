@@ -1,4 +1,5 @@
 const Address = require("../models/Address"); // Import mô hình địa chỉ
+const User = require("../models/User");
 
 const AddressController = {
     // Thêm địa chỉ giao hàng
@@ -23,6 +24,33 @@ const AddressController = {
             res.status(500).json({ message: 'Error fetching addresses', error: error.message });
         }
     },
+    //lất địa chỉ qua id user
+    getAllAddressesByUserId: async (req, res) => {
+        const { userId } = req.body; // Lấy userId từ body của yêu cầu
+        try {
+            const user = await User.findById(userId);
+            if (!user) {
+                console.log( 'Không tìm thấy người dùng này');
+                return res.status(404).json({ message: 'Không tìm thấy người dùng này' });
+            }
+    
+            // Tìm tất cả địa chỉ của người dùng
+            const addresses = await Address.find({ id_user: userId }); // Sử dụng cú pháp đúng để tìm kiếm
+    
+            // Kiểm tra xem có địa chỉ nào không
+            if (addresses.length === 0) {
+                console.log( 'Người dùng chưa nhập địa chỉ nào');
+                
+                return res.status(404).json({ message: 'Người dùng chưa nhập địa chỉ nào' });
+            }
+    
+            res.status(200).json(addresses); // Trả về danh sách địa chỉ
+        } catch (error) {
+            console.error("Error fetching addresses:", error);
+            res.status(500).json({ message: 'Error fetching addresses', error: error.message }); // Trả về thông báo lỗi nếu có
+        }
+    },
+    
 
     // Cập nhật địa chỉ
     updateAddress: async (req, res) => {

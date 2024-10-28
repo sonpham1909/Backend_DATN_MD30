@@ -7,6 +7,7 @@ var router = express.Router();
 
 //getAll Product
 router.get('/',productController.get_all_product);
+router.get('/latest', productController.getLatestProducts);
 
 router.get('/search_products', productController.searchProduct);
 
@@ -36,6 +37,9 @@ router.delete('/:id/delete_product',productController.deleteProduct);
 
 //searchProduct
 
+// Lấy thông tin sản phẩm cùng với tổng số đánh giá và điểm trung bình
+router.get('/reviews/:id', middlewareController.verifyToken,productController.getProductWithReviews);
+// Route để lấy 20 sản phẩm mới nhất
 
 
 module.exports = router;

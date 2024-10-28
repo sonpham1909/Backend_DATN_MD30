@@ -8,6 +8,8 @@ const authController = {
     //register
     registerUser: async (req, res) => {
         try {
+            console.log('Received request to register user:', req.body);  // Log thông tin request
+
             // Tạo salt và hash cho mật khẩu
             const salt = await bcrypt.genSalt(10);
             const hashed = await bcrypt.hash(req.body.password, salt);
@@ -42,6 +44,8 @@ const authController = {
             // Trả về thông tin người dùng
             res.status(200).json(user);
         } catch (error) {
+                    console.error('Error during registration:', error);  // Log lỗi chi tiết
+
             res.status(500).json(error);
         }
     },

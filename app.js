@@ -17,7 +17,7 @@ var ShippingMethodRouter=require('./routes/shipping_method');
 var ResponeRouter=require('./routes/respone_review');
 var ReviewRouter=require('./routes/review');
 var PaymentMethodRouter=require('./routes/payment_method');
-
+var FavoriteMethodRouter=require('./routes/favorite');
 var Sub_CategoryRouter=require('./routes/sub_categorys');
 var Product_sub_CategoryRouter=require('./routes/product_sub_categories');
 
@@ -50,10 +50,12 @@ app.use('/v1/PaymentMethod',PaymentMethodRouter);
 app.use('/v1/subcategorys',Sub_CategoryRouter);
 app.use('/v1/ProductsubCategorys',Product_sub_CategoryRouter);
 app.use('/v1/Review',ReviewRouter);
+app.use('/v1/favorite',FavoriteMethodRouter);
 app.use('/v1/products',ProductRouter);
 
 app.use('/v1/shippingMethods', ShippingMethodRouter);
 app.use('/v1/orders', OrderRouter);
+
 
 
 

@@ -33,7 +33,24 @@ const SubCategoryController = {
             res.status(500).json({ message: 'Error fetching sub-categories', error: error.message });
         }
     },
-
+        getSubcategoriesByCategory: async (req, res) => {
+          try {
+            console.log('Category ID:', req.params.id); // Log category ID
+            const categoryId = req.params.id;
+            const subCategories = await SubCategory.find({ id_category: categoryId });
+            console.log('Subcategories found:', subCategories); // Log kết quả
+      
+            if (subCategories.length === 0) {
+              return res.status(404).json({ message: 'No sub-categories found for this category' });
+            }
+      
+            res.status(200).json(subCategories);
+          } catch (error) {
+            console.error('Error fetching sub-categories:', error);
+            res.status(500).json({ message: 'Server error', error: error.message });
+          }
+        },
+            
     // Cập nhật sub_category
     updateSubCategory: async (req, res) => {
         const subCategoryId = req.params.id; 

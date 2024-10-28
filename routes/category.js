@@ -4,6 +4,7 @@ const CategoryController = require('../controller/Categorycontroller');
 const { uploadphoto, resizeAndUploadImage } = require('../controller/imageUploadMiddleware');
 var router = express.Router();
 
+
 // Tạo danh mục
 router.post(
     "/create_category",
@@ -37,5 +38,9 @@ router.delete(
 
 // Tìm kiếm danh mục
 router.get('/search', middlewareController.verifyToken, CategoryController.searchCategory);
+
+router.get('/:id/subcategories',middlewareController.verifyToken, CategoryController.getSubcategoriesByCategory); // Bỏ middleware
+
+router.get('/subcategories/:subCategoryId/products',middlewareController.verifyToken, CategoryController.getProductsBySubCategory);
 
 module.exports = router;

@@ -2,6 +2,40 @@ const Review = require("../models/Review");
 
 const ReviewController = {
     // Thêm đánh giá mới
+
+
+
+
+
+      // Lấy tất cả đánh giá và phản hồi của từng đánh giá theo product_id
+        getProductReviewsWithResponses: async (req, res) => {
+                try {
+                    const productId = req.params.product_id;
+        
+                    // Sử dụng aggregate để lấy đánh giá và phản hồi của sản phẩm
+                    const reviews = await Review.aggregate([
+                        {
+                            $match: { product_id: productId }  // Lọc các đánh giá có product_id khớp
+                        },
+                        {
+                            $lookup: {
+                                from: "responsereviews",  // Tên collection của phản hồi
+                                localField: "_id",
+                                foreignField: "review_id",
+                                as: "responses"  // Tạo một mảng chứa các phản hồi
+                            }
+                        }
+                    ]);
+        
+                    res.status(200).json(reviews);
+                } catch (error) {
+                    console.error("Error fetching product reviews with responses:", error);
+                    res.status(500).json({ message: 'Error fetching product reviews with responses', error: error.message });
+                }
+            
+        },
+
+
     create_review: async (req, res) => {
         try {
             const newReview = new Review({
@@ -20,6 +54,8 @@ const ReviewController = {
             res.status(500).json({ message: 'Error while adding review', error: error.message });
         }
     },
+
+      
 
     // Lấy tất cả đánh giá
     getAllReviews: async (req, res) => {

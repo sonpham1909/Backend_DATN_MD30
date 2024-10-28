@@ -9,6 +9,15 @@ router.post(
     middlewareController.verifyToken, // Xác minh người dùng
     ReviewController.create_review // Hàm xử lý tạo đánh giá
 );
+// Route lấy danh sách đánh giá và phản hồi của sản phẩm theo product_id
+router.get(
+    '/product/:product_id/reviews_with_responses',
+    middlewareController.verifyToken,
+    ReviewController.getProductReviewsWithResponses // Hàm xử lý
+);
+
+// router.get('/product/:product_id',middlewareController.verifyToken, ReviewController.getReviewsByProduct);
+
 
 // Lấy tất cả đánh giá
 router.get('/', middlewareController.verifyToken, ReviewController.getAllReviews);

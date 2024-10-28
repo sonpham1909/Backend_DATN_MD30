@@ -205,7 +205,7 @@ const authController = {
             // Xóa refresh token khỏi cookie
             res.clearCookie("refreshToken", {
                 httpOnly: true,
-                secure: process.env.NODE_ENV === "production",
+                secure: false,
                 path: "/",
                 sameSite: "strict",
             });
@@ -213,7 +213,8 @@ const authController = {
             // Phản hồi thành công
             return res.status(200).json("Logout successful");
         } catch (error) {
-            res.status(500).json("Internal server error");
+            console.error('Error in logout:', error); // Ghi log lỗi
+            res.status(500).json({ message: "Internal server error", error: error.message });
         }
     }
 

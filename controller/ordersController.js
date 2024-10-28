@@ -9,19 +9,19 @@ const ordersController = {
     getAllOrders: async (req, res) => {
         try {
             const orders = await Order.find()
-            .populate('user_id', 'full_name email') // Lấy first_name và last_name từ User
-            .populate('address_id', 'recipientPhone')
-            .exec();
+                .populate('user_id', 'full_name email') // Lấy first_name và last_name từ User
+                .populate('address_id', 'recipientPhone')
+                .exec();
 
-        // Thêm full_name vào từng đơn hàng
-        const ordersWithFullName = orders.map(order => ({
-            ...order._doc, // Lấy tất cả thông tin của order
-            full_name: order.user_id?.full_name, // Kiểm tra user_id tồn tại
-            email: order.user_id?.email, // Kiểm tra email tồn tại
-            recipientPhone: order.address_id?.recipientPhone // Kiểm tra address_id và recipientPhone
-        }));
+            // Thêm full_name vào từng đơn hàng
+            const ordersWithFullName = orders.map(order => ({
+                ...order._doc, // Lấy tất cả thông tin của order
+                full_name: order.user_id?.full_name, // Kiểm tra user_id tồn tại
+                email: order.user_id?.email, // Kiểm tra email tồn tại
+                recipientPhone: order.address_id?.recipientPhone // Kiểm tra address_id và recipientPhone
+            }));
 
-        res.status(200).json(ordersWithFullName);
+            res.status(200).json(ordersWithFullName);
         } catch (error) {
             console.error('Error while fetching orders:', error);
             res.status(500).json({ message: 'Error while fetching orders', error: error.message });
@@ -30,9 +30,9 @@ const ordersController = {
     },
 
 
-    createOrder : async (req, res) => {
+    createOrder: async (req, res) => {
         try {
-            const { user_id, shipping_method_id,payment_method_id,address_id, items } = req.body;
+            const { user_id, shipping_method_id, payment_method_id, address_id, items } = req.body;
 
             // Tính tổng số tiền
             let totalAmount = 0;
@@ -64,10 +64,10 @@ const ordersController = {
                 });
 
                 totalAmount += orderItem.total_amount; // Cộng dồn vào tổng số tiền
-                total_Products += item.quantity; 
+                total_Products += item.quantity;
 
-                  // Cập nhật số lượng sản phẩm theo biến thể
-                  
+                // Cập nhật số lượng sản phẩm theo biến thể
+
                 await orderItem.save(); // Lưu vào DB
 
                 await Product.findOneAndUpdate(
@@ -99,11 +99,11 @@ const ordersController = {
                 return res.status(404).json({ message: 'Order not found' });
             }
 
-            if(order.status === 'canceled'){
+            if (order.status === 'canceled') {
                 return res.status(400).json({ message: 'Order is already with status "canceled"' });
             }
             const orderItems = await Order_items.find({ order_id: orderId });
-            if(!orderItems){
+            if (!orderItems) {
                 return res.status(404).json({ message: 'Order items not found' });
             }
 

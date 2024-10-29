@@ -84,7 +84,7 @@ const CategoryController = {
         try {
             const { keyword } = req.query;
             const regex = new RegExp(keyword, 'i'); 
-            const categories = await Category.find({ $or: [{ namecategory: regex }, { description: regex }] });
+            const categories = await Category.find({ $or: [{ namecategory: regex }] });
             res.status(200).json(categories);
         } catch (error) {
             console.error("Error searching categories:", error);

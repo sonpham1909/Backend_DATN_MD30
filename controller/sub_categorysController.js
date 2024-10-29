@@ -78,7 +78,20 @@ const SubCategoryController = {
             console.error("Error deleting sub-category:", error);
             res.status(500).json({ message: 'Error deleting sub-category', error: error.message });
         }
+    },
+
+    // Tìm kiếm sub_category
+    searchsubCategory: async (req, res) => {
+        try {
+            const { keyword } = req.query;
+            const regex = new RegExp(keyword, 'i'); 
+            const subcategories = await SubCategory.find({ $or: [{ name: regex }] });
+            res.status(200).json(subcategories);
+        } catch (error) {
+            console.error("Error searching categories:", error);
+            res.status(500).json({ message: 'Error searching sub_categories', error: error.message });
+        }
     }
-}
+};
 
 module.exports = SubCategoryController;

@@ -34,5 +34,5 @@ router.delete(
     middlewareController.verifyAdminToken,
     SubCategoryController.deleteSubCategory // Hàm xử lý xóa sub_category
 );
-
+router.get('/search', middlewareController.verifyToken, SubCategoryController.searchsubCategory);
 module.exports = router;

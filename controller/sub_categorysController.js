@@ -95,7 +95,38 @@ const SubCategoryController = {
             console.error("Error deleting sub-category:", error);
             res.status(500).json({ message: 'Error deleting sub-category', error: error.message });
         }
-    }
+    },
+    getSubcategoriesByCategory: async (req, res) => {
+        try {
+            const categoryId = req.params.id;
+            const subCategories = await SubCategory.find({ id_category: categoryId }).populate('id_category');
+
+            if (subCategories.length === 0) {
+                return res.status(404).json({ message: 'No sub-categories found for this category' });
+            }
+
+            res.status(200).json(subCategories);
+        } catch (error) {
+            console.error('Error fetching sub-categories:', error);
+            res.status(500).json({ message: 'Server error', error: error.message });
+        }
+    },
+    getSubcategoriesByCategory: async (req, res) => {
+        try {
+            const categoryId = req.params.id;
+            const subCategories = await SubCategory.find({ id_category: categoryId }).populate('id_category');
+
+            if (subCategories.length === 0) {
+                return res.status(404).json({ message: 'No sub-categories found for this category' });
+            }
+
+            res.status(200).json(subCategories);
+        } catch (error) {
+            console.error('Error fetching sub-categories:', error);
+            res.status(500).json({ message: 'Server error', error: error.message });
+        }
+    },
+
 }
 
 module.exports = SubCategoryController;

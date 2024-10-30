@@ -7,31 +7,14 @@ const productSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  
-  variants: [
-    {
-      size: {
-        type: String, // Kích cỡ
-        required: true,
-      },
-      color: {
-        type: String, // Màu sắc
-        required: true,
-      },
-      quantity: {
-        type: Number, // Số lượng sản phẩm cho từng biến thể
-        required: true,
-      },
-      price: {
-        type: Number, // Giá của từng biến thể, nếu khác nhau
-        required: true,
-      },
-    },
-  ],
   material:{
     type: String,
     required:true
 
+  },
+  price:{
+    type: Number,
+    require: true
   },
   description: {
     type: String,

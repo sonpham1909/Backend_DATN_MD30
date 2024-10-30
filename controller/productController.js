@@ -60,37 +60,8 @@ const productController = {
         try {
 
             const products = await Product.find();
-            const productsWithTotalQuantity = products.map(product => {
-                // Tính tổng số lượng từ các biến thể
-                const totalQuantity = product.variants.reduce((sum, variant) => sum + variant.quantity, 0);
-
-                if (product.variants.length > 0) {
-
-                    // Lấy tất cả giá của các variant
-                    const prices = product.variants.map(variant => variant.price);
-
-                    // Tìm giá thấp nhất
-                    const lowestPrice = Math.min(...prices);
-
-                    return {
-                        ...product._doc, // Sao chép toàn bộ thông tin sản phẩm
-                        totalQuantity, // Thêm tổng số lượng vào sản phẩm
-                        lowestPrice
-                    };
-
-                } else {
-                    return {
-                        ...product._doc, // Sao chép toàn bộ thông tin sản phẩm
-                        totalQuantity,
-                        lowestPrice: null // Thêm tổng số lượng vào sản phẩm
-                    };
-
-
-
-                }
-
-            });
-            res.status(200).json(productsWithTotalQuantity);
+         
+            res.status(200).json(products);
 
         } catch (error) {
             console.error('Error while getting product:', error);
@@ -103,7 +74,7 @@ const productController = {
     create_product: async (req, res) => {
         try {
             // Kiểm tra dữ liệu đầu vào
-            const { name, variants, material, description } = req.body;
+            const { name, price, material, description } = req.body;
 
 
 
@@ -120,8 +91,8 @@ const productController = {
             const newProduct = new Product({
                 name,
                 // Tham chiếu đến ID danh mục
-                variants,
                 material,
+                price,
                 description,
                 imageUrls: req.imageUrls, // Lưu trữ các URL hình ảnh
             });
@@ -227,6 +198,11 @@ const productController = {
             if (req.body.description) {
                 updatedData.description = req.body.description; // Cập nhật mô tả nếu có
             }
+
+            if (req.body.price) {
+                updatedData.price = req.body.price; // Cập nhật mô tả nếu có
+            }
+
 
             // Cập nhật hình ảnh nếu có
 

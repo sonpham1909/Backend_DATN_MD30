@@ -23,6 +23,7 @@ var Product_sub_CategoryRouter=require('./routes/product_sub_categories');
 
 var ProductRouter = require('./routes/product');
 var OrderRouter = require('./routes/order');
+var VariantRouter = require('./routes/variant');
 
 
 var app = express();
@@ -55,6 +56,7 @@ app.use('/v1/products',ProductRouter);
 
 app.use('/v1/shippingMethods', ShippingMethodRouter);
 app.use('/v1/orders', OrderRouter);
+app.use('/v1/variants', VariantRouter);
 
 
 

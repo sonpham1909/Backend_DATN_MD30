@@ -8,6 +8,8 @@ const authController = {
     //register
     registerUser: async (req, res) => {
         try {
+            console.log('Received request to register user:', req.body);  // Log thông tin request
+
             // Tạo salt và hash cho mật khẩu
             const salt = await bcrypt.genSalt(10);
             const hashed = await bcrypt.hash(req.body.password, salt);
@@ -42,6 +44,8 @@ const authController = {
             // Trả về thông tin người dùng
             res.status(200).json(user);
         } catch (error) {
+                    console.error('Error during registration:', error);  // Log lỗi chi tiết
+
             res.status(500).json(error);
         }
     },
@@ -205,7 +209,7 @@ const authController = {
             // Xóa refresh token khỏi cookie
             res.clearCookie("refreshToken", {
                 httpOnly: true,
-                secure: process.env.NODE_ENV === "production",
+                secure: false,
                 path: "/",
                 sameSite: "strict",
             });
@@ -213,7 +217,8 @@ const authController = {
             // Phản hồi thành công
             return res.status(200).json("Logout successful");
         } catch (error) {
-            res.status(500).json("Internal server error");
+            console.error('Error in logout:', error); // Ghi log lỗi
+            res.status(500).json({ message: "Internal server error", error: error.message });
         }
     }
 

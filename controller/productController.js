@@ -4,45 +4,64 @@ const Product = require("../models/Product");
 const cloudinary = require('../config/cloudinaryConfig');
 const Product_sub_categories = require("../models/Product_sub_categories");
 const removeAccents = require('remove-accents');
+const Review = require("../models/Review");
 
 const productController = {
+
+    // Hàm lấy sản phẩm cùng với tổng số đánh giá và điểm trung bình
+  getProductWithReviews: async (req, res) => {
+    try {
+      const productId = req.params.id;
+
+      // Tìm sản phẩm theo ID
+      const product = await Product.findById(productId);
+
+      if (!product) {
+        return res.status(404).json({ message: "Sản phẩm không tồn tại" });
+      }
+
+      // Tìm tất cả các đánh giá liên quan đến sản phẩm đó
+      const reviews = await Review.find({ product_id: productId });
+
+      // Tính tổng số đánh giá và điểm trung bình
+      const totalReviews = reviews.length;
+      const averageRating = totalReviews > 0
+        ? reviews.reduce((acc, review) => acc + Number(review.rating), 0) / totalReviews
+        : 0;
+
+      // Trả về thông tin sản phẩm cùng với tổng số đánh giá và điểm trung bình
+      res.status(200).json({
+        product,
+        totalReviews,
+        averageRating: averageRating.toFixed(2), // Làm tròn điểm trung bình đến 2 chữ số thập phân
+      });
+    } catch (err) {
+      res.status(500).json({ message: "Lỗi hệ thống", error: err.message });
+    }
+  },
+
+   // Hàm lấy 20 sản phẩm mới nhất
+   getLatestProducts: async (req, res) => {
+    try {
+        // Tìm tất cả các sản phẩm mới nhất (giả định bạn có một trường createdAt hoặc similar để sắp xếp)
+        const latestProducts = await Product.find().sort({ createdAt: -1 }).limit(10); // Giả sử bạn muốn lấy 10 sản phẩm mới nhất
+        res.status(200).json(latestProducts);
+    } catch (error) {
+        console.error("Error while getting latest products:", error);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
+  },
+  // Các hàm khác...
+
+
 
     //get all product
     get_all_product: async (req, res) => {
         try {
 
             const products = await Product.find();
-            const productsWithTotalQuantity = products.map(product => {
-                // Tính tổng số lượng từ các biến thể
-                const totalQuantity = product.variants.reduce((sum, variant) => sum + variant.quantity, 0);
-
-                if (product.variants.length > 0) {
-
-                    // Lấy tất cả giá của các variant
-                    const prices = product.variants.map(variant => variant.price);
-
-                    // Tìm giá thấp nhất
-                    const lowestPrice = Math.min(...prices);
-
-                    return {
-                        ...product._doc, // Sao chép toàn bộ thông tin sản phẩm
-                        totalQuantity, // Thêm tổng số lượng vào sản phẩm
-                        lowestPrice
-                    };
-
-                } else {
-                    return {
-                        ...product._doc, // Sao chép toàn bộ thông tin sản phẩm
-                        totalQuantity,
-                        lowestPrice: null // Thêm tổng số lượng vào sản phẩm
-                    };
-
-
-
-                }
-
-            });
-            res.status(200).json(productsWithTotalQuantity);
+         
+            res.status(200).json(products);
 
         } catch (error) {
             console.error('Error while getting product:', error);
@@ -55,7 +74,7 @@ const productController = {
     create_product: async (req, res) => {
         try {
             // Kiểm tra dữ liệu đầu vào
-            const { name, variants, material, description } = req.body;
+            const { name, price, material, description } = req.body;
 
 
 
@@ -72,8 +91,8 @@ const productController = {
             const newProduct = new Product({
                 name,
                 // Tham chiếu đến ID danh mục
-                variants,
                 material,
+                price,
                 description,
                 imageUrls: req.imageUrls, // Lưu trữ các URL hình ảnh
             });
@@ -179,6 +198,11 @@ const productController = {
             if (req.body.description) {
                 updatedData.description = req.body.description; // Cập nhật mô tả nếu có
             }
+
+            if (req.body.price) {
+                updatedData.price = req.body.price; // Cập nhật mô tả nếu có
+            }
+
 
             // Cập nhật hình ảnh nếu có
 

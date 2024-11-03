@@ -5,25 +5,15 @@ const ProductSubCategory = require("../models/Product_sub_categories");
 const variantsController = {
   // Endpoint để lấy tất cả màu sắc và kích cỡ khả dụng cho mục đích lọc
   GetColorsAndSizesBySubCategoryId: async (req, res) => {
-    const { subCategoryId } = req.params;
     try {
-      const productsInSubCategory = await ProductSubCategory.find({ sub_categories_id: subCategoryId });
-      const productIds = productsInSubCategory.map((item) => item.product_id);
+      const { subCategoryId } = req.params;
+      const productSubCategories = await ProductSubCategory.find({ sub_categories_id: subCategoryId });
+      const productIds = productSubCategories.map(item => item.product_id);
       const variants = await Variant.find({ product_id: { $in: productIds } });
-
-      const colors = new Set();
-      const sizes = new Set();
-
-      variants.forEach((variant) => {
-        colors.add(variant.color_code);
-        variant.sizes.forEach((sizeObj) => {
-          sizes.add(sizeObj.size);
-        });
-      });
-
-      res.json({ colors: Array.from(colors), sizes: Array.from(sizes) });
+      res.status(200).json(variants);
     } catch (error) {
-      res.status(500).json({ message: "Error fetching colors and sizes for sub-category", error: error.message });
+      console.error('Error fetching variants by subcategory:', error);
+      res.status(500).json({ message: 'Error fetching variants by subcategory' });
     }
   },
   getAllVariants: async (req, res) => {

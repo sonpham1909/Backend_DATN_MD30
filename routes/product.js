@@ -11,6 +11,11 @@ router.get('/latest', productController.getLatestProducts);
 
 router.get('/search_products', productController.searchProduct);
 
+//Lấy sản phẩm phổ biến
+
+router.get('/popular',middlewareController.verifyToken,productController.getPopularProducts);
+
+
 //get product by Id
 router.get('/:id', productController.getProductById);
 
@@ -39,6 +44,10 @@ router.delete('/:id/delete_product',productController.deleteProduct);
 
 // Lấy thông tin sản phẩm cùng với tổng số đánh giá và điểm trung bình
 router.get('/reviews/:id', middlewareController.verifyToken,productController.getProductWithReviews);
+
+
+
+
 // Route để lấy 20 sản phẩm mới nhất
 
 

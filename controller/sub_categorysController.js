@@ -70,8 +70,7 @@ const SubCategoryController = {
                 updatedData.image = req.imageUrls[0]; // Lấy URL hình ảnh đầu tiên
             }
 
-            // Cập nhật sub_category
-            Object.assign(subCategory, updatedData);
+            // Cập nhật sub_categoryObject.assign(subCategory, updatedData);
             const updatedSubCategory = await subCategory.save();
             res.status(200).json({ message: 'Sub-category updated successfully', subCategory: updatedSubCategory });
         } catch (error) {

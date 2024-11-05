@@ -69,7 +69,6 @@ const order_items_controller = {
         }
     },
     getTopSellingProducts: async (req, res) => {
-        const { limit = 5 } = req.query; // Số lượng sản phẩm cần lấy, mặc định là 5
         try {
             const topSellingProducts = await Order_items.aggregate([
                 {
@@ -86,11 +85,11 @@ const order_items_controller = {
                     $group: {
                         _id: "$product_id",
                         totalQuantity: { $sum: "$quantity" },
-                        totalAmount: { $sum: '$total_amount' }
-                    }
+                        totalAmount: {$sum: '$total_amount'}
+                    } 
                 },
-                { $sort: { totalQuantity: -1 } }, // Sắp xếp theo số lượng giảm dần
-                { $limit: parseInt(limit, 10) },
+                { $sort: { totalQuantity: -1 } } // Sắp xếp theo số lượng giảm dần
+                // Không thêm $limit ở đây
             ]);
 
             res.status(200).json(topSellingProducts);
@@ -99,5 +98,6 @@ const order_items_controller = {
             res.status(500).json({ message: "Error fetching top selling products", error: error.message });
         }
     },
+    
 }
 module.exports = order_items_controller;

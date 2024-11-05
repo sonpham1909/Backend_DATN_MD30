@@ -70,8 +70,7 @@ const SubCategoryController = {
                 updatedData.image = req.imageUrls[0]; // Lấy URL hình ảnh đầu tiên
             }
 
-            // Cập nhật sub_category
-            Object.assign(subCategory, updatedData);
+            // Cập nhật sub_categoryObject.assign(subCategory, updatedData);
             const updatedSubCategory = await subCategory.save();
             res.status(200).json({ message: 'Sub-category updated successfully', subCategory: updatedSubCategory });
         } catch (error) {
@@ -128,20 +127,5 @@ const SubCategoryController = {
     },
 
 }
-    },
-
-    // Tìm kiếm sub_category
-    searchsubCategory: async (req, res) => {
-        try {
-            const { keyword } = req.query;
-            const regex = new RegExp(keyword, 'i'); 
-            const subcategories = await SubCategory.find({ $or: [{ name: regex }] });
-            res.status(200).json(subcategories);
-        } catch (error) {
-            console.error("Error searching categories:", error);
-            res.status(500).json({ message: 'Error searching sub_categories', error: error.message });
-        }
-    }
-};
 
 module.exports = SubCategoryController;

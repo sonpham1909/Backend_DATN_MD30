@@ -10,6 +10,7 @@ var router = express.Router();
 router.get("/", variantsController.getAllVariants);
 router.get(
     "/colorsAndSizesBySubCategoryId/:subCategoryId",
+    middlewareController.verifyToken,
   variantsController.GetColorsAndSizesBySubCategoryId
 );
 

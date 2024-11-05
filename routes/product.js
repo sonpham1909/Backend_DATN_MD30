@@ -14,6 +14,9 @@ router.get('/search_products', productController.searchProduct);
 //Lấy sản phẩm phổ biến
 
 router.get('/popular',middlewareController.verifyToken,productController.getPopularProducts);
+//Lấy danh sách sản phẩm theo biến thể
+
+router.get('/by-variant',middlewareController.verifyToken,productController.getProductsByVariants);
 
 
 //get product by Id

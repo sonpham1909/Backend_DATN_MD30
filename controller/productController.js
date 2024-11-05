@@ -1,12 +1,92 @@
+const ProductSubCategory = require('../models/Product_sub_categories'); // Đảm bảo import đúng model
+
 const { log } = require("debug/src/browser");
 const Category = require("../models/Category");
 const Product = require("../models/Product");
 const cloudinary = require("../config/cloudinaryConfig");
-const Product_sub_categories = require("../models/Product_sub_categories");
 const removeAccents = require("remove-accents");
 const Review = require("../models/Review");
+const Variant = require('../models/Variants');
 
 const productController = {
+    getProductsByVariants: async (req, res) => {
+        try {
+            const { sub_category_id, size, color_code, minPrice, maxPrice } = req.query;
+            
+            // Bước 1: Tìm sản phẩm theo danh mục con (`sub_category_id`)
+            let products = [];
+            if (sub_category_id) {
+                // Tìm các sản phẩm thuộc danh mục con cụ thể
+                const productSubCategories = await ProductSubCategory.find({ sub_categories_id: sub_category_id });
+                const productIds = productSubCategories.map((psc) => psc.product_id);
+                
+                products = await Product.find({ _id: { $in: productIds } });
+                if (products.length === 0) {
+                    console.log("No products found for sub_category_id");
+                    return res.status(200).json([]);  // Trả về mảng trống nếu không tìm thấy sản phẩm nào
+                }
+            } else {
+                // Nếu không có `sub_category_id`, lấy tất cả sản phẩm
+                products = await Product.find();
+            }
+    
+            // Bước 2: Lọc sản phẩm dựa trên biến thể (`Variant`)
+            let variantQuery = {};
+            // Tạo điều kiện lọc biến thể dựa trên danh sách sản phẩm đã tìm thấy từ trước
+            if (products.length > 0) {
+                variantQuery.product_id = { $in: products.map((p) => p._id) };
+            }
+            
+            if (color_code) {
+                variantQuery.color_code = { $in: Array.isArray(color_code) ? color_code.map((c) => c.trim()) : [color_code.trim()] };
+            }
+            if (size) {
+                variantQuery["sizes.size"] = { $in: Array.isArray(size) ? size : [size] };
+            }
+    
+            console.log("Variant Query:", variantQuery);
+    
+            // Tìm các biến thể phù hợp với query
+            const variants = await Variant.find(variantQuery);
+            console.log("Variants found:", variants);
+    
+            if (!variants || variants.length === 0) {
+                console.log("No variants found for given criteria");
+                return res.status(200).json([]);  // Trả về mảng trống nếu không tìm thấy biến thể nào
+            }
+    
+            // Lấy danh sách ID sản phẩm từ biến thể
+            const variantProductIds = variants.map((v) => v.product_id);
+    
+            // Lọc sản phẩm từ danh sách ID sản phẩm đã tìm thấy từ biến thể
+            products = await Product.find({ _id: { $in: variantProductIds } });
+    
+            if (products.length === 0) {
+                console.log("No products match after filtering variants");
+                return res.status(200).json([]);  // Trả về mảng trống nếu không tìm thấy sản phẩm nào sau khi lọc
+            }
+    
+            // Bước 3: Lọc thêm dựa trên khoảng giá nếu có
+            if (minPrice) {
+                products = products.filter((p) => p.price >= parseFloat(minPrice));
+            }
+            if (maxPrice) {
+                products = products.filter((p) => p.price <= parseFloat(maxPrice));
+            }
+    
+            // Trả về danh sách sản phẩm đã được lọc
+            res.status(200).json(products);
+        } catch (error) {
+            console.error("Error during getProductsByVariants:", error);
+            res.status(500).json({ message: "Server error", error });
+        }
+    },
+    
+    
+    
+    
+      
+      
   // Hàm lấy sản phẩm phổ biến
   getPopularProducts: async (req, res) => {
     try {
@@ -14,46 +94,45 @@ const productController = {
       const popularProducts = await Product.aggregate([
         {
           $lookup: {
-            from: 'reviews',
-            localField: '_id',
-            foreignField: 'product_id',
-            as: 'reviews'
-          }
+            from: "reviews",
+            localField: "_id",
+            foreignField: "product_id",
+            as: "reviews",
+          },
         },
         {
           $addFields: {
-            totalReviews: { $size: '$reviews' },
+            totalReviews: { $size: "$reviews" },
             averageRating: {
               $cond: {
-                if: { $gt: [{ $size: '$reviews' }, 0] },
-                then: { $avg: '$reviews.rating' },
-                else: 0
-              }
-            }
-          }
+                if: { $gt: [{ $size: "$reviews" }, 0] },
+                then: { $avg: "$reviews.rating" },
+                else: 0,
+              },
+            },
+          },
         },
         {
-          $match: { totalReviews: { $gt: 0 } } // Chỉ lấy sản phẩm có ít nhất một đánh giá
+          $match: { totalReviews: { $gt: 0 } }, // Chỉ lấy sản phẩm có ít nhất một đánh giá
         },
         {
-          $sort: { totalReviews: -1 } // Sắp xếp giảm dần theo số lượng đánh giá
+          $sort: { totalReviews: -1 }, // Sắp xếp giảm dần theo số lượng đánh giá
         },
         {
-          $limit: 10 // Giả sử bạn muốn lấy 10 sản phẩm phổ biến nhất
-        }
+          $limit: 10, // Giả sử bạn muốn lấy 10 sản phẩm phổ biến nhất
+        },
       ]);
-  
+
       res.status(200).json(popularProducts);
     } catch (error) {
-      console.error('Error while getting popular products:', error);
-      res.status(500).json({ message: 'Error while getting popular products' });
+      console.error("Error while getting popular products:", error);
+      res.status(500).json({ message: "Error while getting popular products" });
     }
   },
-  
 
   //Lấy tổng bình luận đánh giá
-// Trong file productController.js
-getProductWithReviews: async (req, res) => {
+  // Trong file productController.js
+  getProductWithReviews: async (req, res) => {
     try {
       const productId = req.params.id;
 
@@ -69,9 +148,11 @@ getProductWithReviews: async (req, res) => {
 
       // Tính tổng số đánh giá và điểm trung bình
       const totalReviews = reviews.length;
-      const averageRating = totalReviews > 0
-        ? reviews.reduce((acc, review) => acc + Number(review.rating), 0) / totalReviews
-        : 0;
+      const averageRating =
+        totalReviews > 0
+          ? reviews.reduce((acc, review) => acc + Number(review.rating), 0) /
+            totalReviews
+          : 0;
 
       // Trả về thông tin sản phẩm cùng với tổng số đánh giá và điểm trung bình
       res.status(200).json({
@@ -183,12 +264,10 @@ getProductWithReviews: async (req, res) => {
       });
     } catch (error) {
       console.error("Error while getting product by ID:", error);
-      res
-        .status(500)
-        .json({
-          message: "Error while getting product by ID",
-          error: error.message,
-        });
+      res.status(500).json({
+        message: "Error while getting product by ID",
+        error: error.message,
+      });
     }
   },
   deleteVariant: async (req, res) => {
@@ -301,20 +380,16 @@ getProductWithReviews: async (req, res) => {
       Object.assign(product, updatedData);
       const updatedProduct = await product.save(); // Lưu sản phẩm đã được cập nhật
 
-      return res
-        .status(200)
-        .json({
-          message: "Sản phẩm đã được cập nhật thành công",
-          product: updatedProduct,
-        });
+      return res.status(200).json({
+        message: "Sản phẩm đã được cập nhật thành công",
+        product: updatedProduct,
+      });
     } catch (error) {
       console.error("Error updating product:", error);
-      return res
-        .status(500)
-        .json({
-          message: "Đã xảy ra lỗi khi cập nhật sản phẩm",
-          error: error.message,
-        });
+      return res.status(500).json({
+        message: "Đã xảy ra lỗi khi cập nhật sản phẩm",
+        error: error.message,
+      });
     }
   },
   deleteProduct: async (req, res) => {
@@ -346,12 +421,10 @@ getProductWithReviews: async (req, res) => {
         .json({ message: "Sản phẩm đã được xóa thành công" });
     } catch (error) {
       console.error("Error deleting product:", error);
-      return res
-        .status(500)
-        .json({
-          message: "Đã xảy ra lỗi khi xóa sản phẩm",
-          error: error.message,
-        });
+      return res.status(500).json({
+        message: "Đã xảy ra lỗi khi xóa sản phẩm",
+        error: error.message,
+      });
     }
   },
   searchProduct: async (req, res) => {

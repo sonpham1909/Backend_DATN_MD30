@@ -9,13 +9,21 @@ const variantsController = {
       const { subCategoryId } = req.params;
       const productSubCategories = await ProductSubCategory.find({ sub_categories_id: subCategoryId });
       const productIds = productSubCategories.map(item => item.product_id);
+      
+      // Lấy danh sách các biến thể của sản phẩm thuộc danh mục con
       const variants = await Variant.find({ product_id: { $in: productIds } });
-      res.status(200).json(variants);
+  
+      // Lấy các màu sắc và kích cỡ duy nhất từ danh sách biến thể
+      const colors = [...new Set(variants.map(variant => variant.color_code))];
+      const sizes = [...new Set(variants.flatMap(variant => variant.sizes.map(size => size.size)))];
+  
+      res.status(200).json({ colors, sizes });
     } catch (error) {
       console.error('Error fetching variants by subcategory:', error);
-      res.status(500).json({ message: 'Error fetching variants by subcategory' });
+      res.status(500).json({ message: 'Error fetching variants by subcategory', error });
     }
   },
+  
   getAllVariants: async (req, res) => {
     try {
       const variants = await Variant.find();

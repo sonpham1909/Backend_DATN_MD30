@@ -24,8 +24,10 @@ const ReviewSchema = new mongoose.Schema({
         type: String 
     },
     img: {
-        type: String 
-    },
+        type: [String]
+    }
+        
+    
 }, { timestamps: true });
 
 module.exports = mongoose.model('Review', ReviewSchema);

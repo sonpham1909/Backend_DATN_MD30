@@ -10,4 +10,6 @@ router.get('/',order_items_controller.getAllOrderItems);
 
 router.get('/top_selling',order_items_controller.getTopSellingProducts);
 
+router.get('/:orderId', order_items_controller.getOrderItemsByOrderId);
+
 module.exports = router;

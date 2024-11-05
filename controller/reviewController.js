@@ -1,4 +1,6 @@
+const Product = require("../models/Product");
 const Review = require("../models/Review");
+const User = require("../models/User");
 
 const ReviewController = {
     // Thêm đánh giá mới
@@ -38,14 +40,41 @@ const ReviewController = {
 
     create_review: async (req, res) => {
         try {
+
+            const {product_id, user_id, rating, comment, color, size} = req.body;
+            const product = await Product.findById(product_id);
+            
+            //Kiểm tra product
+            if(!product){
+                console.log('Product not found');
+                return res.status(404).json({message: 'Product not found'});
+                
+            }
+
+            const user = await User.findById(user_id);
+            
+            //Kiểm tra product
+            if(!user){
+                console.log('User not found');
+                return res.status(404).json({message: 'User not found'});
+                
+            }
+            
+
+
+
+
+
+
+
             const newReview = new Review({
-                product_id: req.body.product_id,
-                user_id: req.body.user_id,
+                product_id,
+                user_id,
                 rating: req.body.rating,
                 comment: req.body.comment,
                 color: req.body.color,  // Tùy chọn
                 size: req.body.size,    // Tùy chọn
-                img: req.body.img       // Thêm trường img
+                img: req.imageUrls       // Thêm trường img
             });
             const savedReview = await newReview.save();
             res.status(201).json(savedReview);

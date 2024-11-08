@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const { Schema } = mongoose;
 
+
 const ReviewSchema = new Schema({
   product_id: { 
     type: Schema.Types.ObjectId, // Chuyển đổi từ String sang ObjectId
@@ -30,6 +31,7 @@ const ReviewSchema = new Schema({
   img: {
     type: String 
   },
+
 }, { timestamps: true });
 
 module.exports = mongoose.model('Review', ReviewSchema);

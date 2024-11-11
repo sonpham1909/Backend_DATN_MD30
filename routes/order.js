@@ -12,6 +12,8 @@ router.post('/create_order', orderController.createOrder);
 //cancle order
 router.patch('/cancel', orderController.cancelOrder);
 
+router.patch('/:orderId/change_status', orderController.changeStatusOrder);
+
 
 
 

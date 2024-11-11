@@ -184,8 +184,26 @@ const productController = {
   get_all_product: async (req, res) => {
     try {
       const products = await Product.find();
-
-      res.status(200).json(products);
+  
+      const productWithQuantity = await Promise.all(
+        products.map(async (product) => {
+          const variants = await Variant.find({ product_id: product._id });
+  
+          // Calculate total quantity by summing quantities in the sizes array of each variant
+          const totalQuantity = variants.reduce((sum, variant) => {
+            const sizeQuantity = variant.sizes.reduce((sizeSum, size) => sizeSum + size.quantity, 0);
+            return sum + sizeQuantity;
+          }, 0);
+  
+          return {
+            ...product.toObject(),
+            totalQuantity,
+            
+          };
+        })
+      );
+  
+      res.status(200).json(productWithQuantity);
     } catch (error) {
       console.error("Error while getting product:", error);
       res
@@ -193,7 +211,7 @@ const productController = {
         .json({ message: "Error while getting product", error: error.message });
     }
   },
-
+  
   // Thêm sản phẩm
   create_product: async (req, res) => {
     try {

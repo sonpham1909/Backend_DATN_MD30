@@ -44,7 +44,7 @@ const authController = {
             // Trả về thông tin người dùng
             res.status(200).json(user);
         } catch (error) {
-                    console.error('Error during registration:', error);  // Log lỗi chi tiết
+            console.error('Error during registration:', error);  // Log lỗi chi tiết
 
             res.status(500).json(error);
         }
@@ -54,7 +54,7 @@ const authController = {
 
         // Lấy các vai trò của người dùng từ bảng user_role
         const userRoles = await UserRole.find({ userId: user.id });
-      
+
         const roles = await userRoles.map(role => role.roleId); // Giả định rằng roleId lưu trữ tên vai trò
         const rolesName = await Promise.all(userRoles.map(async role => {
             const roleData = await Role.findById(role.roleId); // Tìm thông tin vai trò
@@ -69,7 +69,7 @@ const authController = {
             { expiresIn: "3h" }
         );
     },
-    generateRefreshToken: async(user) => {
+    generateRefreshToken: async (user) => {
         // Lấy các vai trò của người dùng từ bảng user_role
         const userRoles = await UserRole.find({ userId: user.id });
         const rolesName = await Promise.all(userRoles.map(async role => {
@@ -80,7 +80,7 @@ const authController = {
         return jwt.sign(
             {
                 id: user.id,
-                roles:rolesName
+                roles: rolesName
             },
             process.env.REFRESH_TOKEN_KEY,
             { expiresIn: "300d" }
@@ -102,8 +102,8 @@ const authController = {
             const validPassword = await bcrypt.compare(req.body.password, user.password);
             if (!validPassword) {
                 console.log('Wrong username or password');
-                
-                return res.status(401).json({message: "wrong username or password11"});
+
+                return res.status(401).json({ message: "wrong username or password11" });
 
             }
 
@@ -127,8 +127,8 @@ const authController = {
 
                 });
 
-                if(user.block === true){
-                    return res.status(400).json({message:'Tài khoản bị khóa'});
+                if (user.block === true) {
+                    return res.status(400).json({ message: 'Tài khoản bị khóa' });
                 }
 
                 const { password, ...others } = user._doc;
@@ -220,7 +220,84 @@ const authController = {
             console.error('Error in logout:', error); // Ghi log lỗi
             res.status(500).json({ message: "Internal server error", error: error.message });
         }
-    }
+    },
+    loginAdmin: async (req, res) => {
+        try {
+            const user = await User.findOne({ username: req.body.username });
+
+
+            if (!req.body.username || !req.body.password) {
+                return res.status(400).json({ message: "Tên đăng nhập và mật khẩu không được để trống." });
+            }
+            if (!user) {
+                console.log("wrong username or password");
+                return res.status(401).json({ message: "wrong username or password!" });
+
+            }
+
+            const validPassword = await bcrypt.compare(req.body.password, user.password);
+            if (!validPassword) {
+                console.log('Wrong username or password');
+
+                return res.status(401).json({ message: "wrong username or password11" });
+
+            }
+
+
+
+            //Correct
+            if (user && validPassword) {
+                const userRoles = await UserRole.find({ userId: user._id });
+
+
+                // Kiểm tra xem có vai trò admin hay không
+                const isAdmin = await Promise.any(
+                    userRoles.map(async (userRole) => {
+                        const role = await Role.findById(userRole.roleId);
+                        return role && role.name === 'admin';
+                    })
+                ).catch(() => false);
+
+                if (isAdmin === false) {
+                    return res.status(403).json({ message: 'Bạn không phải là admin' });
+                }
+
+
+
+                const accessToken = await authController.generateAccessToken(user);
+
+                //refreshToken
+                const refreshToken = await authController.generateRefreshToken(user);
+
+                //save refreshToken in database 
+                user.refreshToken = refreshToken;
+                await user.save();
+
+                //set cookie with refreshtoken
+                res.cookie("refreshToken", refreshToken, {
+                    httpOnly: true,
+                    secure: false,
+                    path: '/',
+                    sameSite: "strict",
+
+                });
+
+                if (user.block === true) {
+                    return res.status(400).json({ message: 'Tài khoản bị khóa' });
+                }
+
+                const { password, ...others } = user._doc;
+                console.log('Login successfully');
+                res.status(200).json({ ...others, accessToken });
+
+
+
+            }
+        } catch (error) {
+            console.error("Internal Server Error:", error);
+            res.status(500).json({ message: "Internal Server Error" });
+        }
+    },
 
 
 }

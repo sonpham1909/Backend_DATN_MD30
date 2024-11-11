@@ -11,6 +11,11 @@ const orderItemsSchemma = mongoose.Schema({
         ref:'Product',
         require: true
     },
+    image_variant:{
+        type: String,
+       
+
+    },
     size:{
         type: String,
         required: true

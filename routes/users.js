@@ -39,4 +39,8 @@ router.delete('/:id/delete_role',middlewareController.verifyToken,middlewareCont
 //get role user
 router.get('/:id/get_role_user',userController.getUserRoleById);
 
+//lấy thông tin dựa trên id 
+router.get('/:id/get_user_info', middlewareController.verifyToken, userController.getUserInfoById);
+
+
 module.exports = router;

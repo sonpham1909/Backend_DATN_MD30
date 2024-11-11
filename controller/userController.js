@@ -5,6 +5,22 @@ const Role = require('../models/Role');
 const { log } = require('debug/src/browser');
 
 const userController = {
+
+    getUserInfoById: async (req, res) => {
+        try {
+            const userId = req.params.id;
+            const user = await User.findById(userId); // Lấy tất cả thông tin người dùng
+            
+            if (!user) {
+                return res.status(404).json({ message: 'User not found' });
+            }
+            
+            res.status(200).json(user);
+        } catch (error) {
+            res.status(500).json({ message: 'Error fetching user information', error: error.message });
+        }
+    },
+    
     //getAlluser
     getAllUser: async (req, res) => {
         try {

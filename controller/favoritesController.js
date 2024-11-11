@@ -45,7 +45,7 @@ const FavoriteController = {
     const userId = req.user?.id;
   
     try {
-      const favorites = await Favorite.find({ userId }).populate("productId", "_id name price imageUrls variants material description");
+      const favorites = await Favorite.find({ userId }).populate("productId");
   
       if (!favorites || favorites.length === 0) {
         return res.status(200).json({ message: "No favorites found", favorites: [] });
@@ -59,6 +59,21 @@ const FavoriteController = {
     }
   }
 
+  // getFavorites: async (req, res) => {
+  //   const userId = req.user?.id;
+  
+  //   try {
+  //     const favorites = await Favorite.find({ userId, isFavorite: true }).populate('productId');
+  
+  //     res.status(200).json({
+  //       success: true,
+  //       favorites
+  //     });
+  //   } catch (error) {
+  //     console.error("Error fetching favorites:", error.message);
+  //     return res.status(500).json({ error: "Internal Server Error" });
+  //   }
+  // }
   
   // getFavorites: async (req, res) => {
   //   const userId = req.user?.id;

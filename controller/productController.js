@@ -10,6 +10,29 @@ const Variant = require('../models/Variants');
 const { default: mongoose } = require('mongoose');
 
 const productController = {
+  getProductByIdApp: async (req, res) => {
+    try {
+      const productId = req.params.product_id;
+
+      // Tìm kiếm sản phẩm theo id
+      const product = await Product.findById(productId);
+
+      if (!product) {
+        return res.status(404).json({ message: "Product not found" });
+      }
+
+      res.status(200).json(product);
+    } catch (error) {
+      console.error("Error fetching product:", error);
+      res.status(500).json({
+        message: "Error fetching product",
+        error: error.message,
+      });
+    }
+  },
+  // ... Các hàm khác của ReviewController
+
+
     getProductsByVariants: async (req, res) => {
         try {
             const { sub_category_id, size, color_code, minPrice, maxPrice } = req.query;

@@ -4,6 +4,13 @@ const ReviewController = require('../controller/reviewController');
 const { uploadphoto, resizeAndUploadImage } = require('../controller/imageUploadMiddleware');
 var router = express.Router();
 
+
+
+router.get(
+    "/reviews_ByUser",
+    middlewareController.verifyToken,
+    ReviewController.getUserReviews // Hàm xử lý lấy đánh giá của người dùng
+);
 // Tạo đánh giá
 router.post(
     "/create_review",
@@ -19,7 +26,10 @@ router.get(
     ReviewController.getProductReviewsWithResponses // Hàm xử lý
 );
 
-// router.get('/product/:product_id',middlewareController.verifyToken, ReviewController.getReviewsByProduct);
+// Lấy tất cả đánh giá của một người dùng theo user_id
+
+
+
 
 
 // Lấy tất cả đánh giá

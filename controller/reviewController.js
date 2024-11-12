@@ -1,6 +1,7 @@
 const mongoose = require("mongoose"); // Thêm dòng này để import mongoose
 
 const Review = require("../models/Review");
+const Variant = require("../models/Variants");
 const ReviewController = {
   // Thêm đánh giá mới
 
@@ -37,6 +38,13 @@ const ReviewController = {
 
   create_review: async (req, res) => {
     try {
+
+      const variant = await Variant.findOne({color: req.body.color, product_id:req.body.product_id});
+      if(!variant){
+        return res.status(404).json({message:'Variant not found'});
+      }
+
+
       const newReview = new Review({
         product_id: req.body.product_id,
         user_id: req.body.user_id,
@@ -45,6 +53,7 @@ const ReviewController = {
         color: req.body.color, // Tùy chọn
         size: req.body.size, // Tùy chọn
         img: req.body.img, // Thêm trường img
+        image_variant:variant.image
       });
       const savedReview = await newReview.save();
       res.status(201).json(savedReview);

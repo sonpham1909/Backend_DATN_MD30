@@ -31,6 +31,11 @@ const ReviewSchema = new Schema({
   img: {
     type: String 
   },
+  image_variant:{
+    type:String,
+    require:true
+    
+  }
 
 }, { timestamps: true });
 

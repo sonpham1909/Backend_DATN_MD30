@@ -7,6 +7,7 @@ const cloudinary = require("../config/cloudinaryConfig");
 const removeAccents = require("remove-accents");
 const Review = require("../models/Review");
 const Variant = require('../models/Variants');
+const { default: mongoose } = require('mongoose');
 
 const productController = {
     getProductsByVariants: async (req, res) => {
@@ -266,15 +267,23 @@ const productController = {
         .json({ message: "Error while adding variant", error: error.message });
     }
   },
+ 
+
   getProductById: async (req, res) => {
     const { id } = req.params;
-
+  
+    // Kiểm tra nếu `id` không phải là ObjectId hợp lệ
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid product ID format" });
+    }
+  
     try {
       const product = await Product.findById(id);
       if (!product) {
+        console.log('Product not found');
         return res.status(404).json({ message: "Product not found" });
       }
-
+  
       // Trả về toàn bộ thông tin sản phẩm, bao gồm cả danh sách biến thể
       res.status(200).json({
         ...product._doc, // Sao chép toàn bộ thông tin sản phẩm
@@ -288,6 +297,7 @@ const productController = {
       });
     }
   },
+  
   deleteVariant: async (req, res) => {
     const { productId, variantId } = req.params;
 

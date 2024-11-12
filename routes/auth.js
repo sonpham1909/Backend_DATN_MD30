@@ -9,6 +9,8 @@ router.post("/register", authController.registerUser);
 //login user
 router.post("/login", authController.loginUser);
 
+router.post("/login_admin", authController.loginAdmin);
+
 // Request refresh token
 router.post("/refresh", authController.requestRefreshToken);
 

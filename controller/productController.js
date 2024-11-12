@@ -7,6 +7,7 @@ const cloudinary = require("../config/cloudinaryConfig");
 const removeAccents = require("remove-accents");
 const Review = require("../models/Review");
 const Variant = require('../models/Variants');
+const { default: mongoose } = require('mongoose');
 
 const productController = {
   getProductByIdApp: async (req, res) => {
@@ -207,8 +208,26 @@ const productController = {
   get_all_product: async (req, res) => {
     try {
       const products = await Product.find();
-
-      res.status(200).json(products);
+  
+      const productWithQuantity = await Promise.all(
+        products.map(async (product) => {
+          const variants = await Variant.find({ product_id: product._id });
+  
+          // Calculate total quantity by summing quantities in the sizes array of each variant
+          const totalQuantity = variants.reduce((sum, variant) => {
+            const sizeQuantity = variant.sizes.reduce((sizeSum, size) => sizeSum + size.quantity, 0);
+            return sum + sizeQuantity;
+          }, 0);
+  
+          return {
+            ...product.toObject(),
+            totalQuantity,
+            
+          };
+        })
+      );
+  
+      res.status(200).json(productWithQuantity);
     } catch (error) {
       console.error("Error while getting product:", error);
       res
@@ -216,7 +235,7 @@ const productController = {
         .json({ message: "Error while getting product", error: error.message });
     }
   },
-
+  
   // Thêm sản phẩm
   create_product: async (req, res) => {
     try {
@@ -271,15 +290,23 @@ const productController = {
         .json({ message: "Error while adding variant", error: error.message });
     }
   },
+ 
+
   getProductById: async (req, res) => {
     const { id } = req.params;
-
+  
+    // Kiểm tra nếu `id` không phải là ObjectId hợp lệ
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid product ID format" });
+    }
+  
     try {
       const product = await Product.findById(id);
       if (!product) {
+        console.log('Product not found');
         return res.status(404).json({ message: "Product not found" });
       }
-
+  
       // Trả về toàn bộ thông tin sản phẩm, bao gồm cả danh sách biến thể
       res.status(200).json({
         ...product._doc, // Sao chép toàn bộ thông tin sản phẩm
@@ -293,6 +320,7 @@ const productController = {
       });
     }
   },
+  
   deleteVariant: async (req, res) => {
     const { productId, variantId } = req.params;
 

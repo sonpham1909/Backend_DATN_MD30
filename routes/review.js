@@ -1,6 +1,7 @@
 var express = require('express');
 const middlewareController = require('../controller/middlewareController');
 const ReviewController = require('../controller/reviewController');
+const { uploadphoto, resizeAndUploadImage } = require('../controller/imageUploadMiddleware');
 var router = express.Router();
 
 
@@ -13,7 +14,9 @@ router.get(
 // Tạo đánh giá
 router.post(
     "/create_review",
-    middlewareController.verifyToken, // Xác minh người dùng
+    // Xác minh người dùng
+    uploadphoto.array('imageUrls', 5),
+    resizeAndUploadImage,
     ReviewController.create_review // Hàm xử lý tạo đánh giá
 );
 // Route lấy danh sách đánh giá và phản hồi của sản phẩm theo product_id

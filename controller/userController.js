@@ -2,7 +2,6 @@ const User = require('../models/User');
 const bcrypt = require('bcrypt');
 const UserRole = require('../models/UserRole');
 const Role = require('../models/Role');
-const { log } = require('debug/src/browser');
 
 const userController = {
 

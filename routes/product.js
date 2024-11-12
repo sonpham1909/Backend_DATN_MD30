@@ -18,7 +18,11 @@ router.get('/popular',middlewareController.verifyToken,productController.getPopu
 
 router.get('/by-variant',middlewareController.verifyToken,productController.getProductsByVariants);
 
-
+router.get(
+    '/:product_id/by-id',
+    middlewareController.verifyToken, // Xác minh người dùng
+    productController.getProductByIdApp // Hàm xử lý lấy thông tin sản phẩm
+);
 //get product by Id
 router.get('/:id', productController.getProductById);
 

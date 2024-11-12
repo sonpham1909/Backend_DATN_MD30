@@ -4,6 +4,36 @@ const Review = require("../models/Review");
 const ReviewController = {
   // Thêm đánh giá mới
 
+
+
+  getUserReviews: async (req, res) => {
+    try {
+        const userId = req.user?.id;
+
+        if (!userId) {
+            return res.status(400).json({ message: "User ID is required" });
+        }
+
+        // Lấy tất cả đánh giá của một người dùng
+        const userReviews = await Review.find({ user_id: userId });
+
+        if (userReviews.length === 0) {
+            return res.status(404).json({ message: "No reviews found for this user" });
+        }
+
+        res.status(200).json(userReviews);
+    } catch (error) {
+        console.error("Error fetching user reviews:", error);
+        res.status(500).json({
+            message: "Error fetching user reviews",
+            error: error.message,
+        });
+    }
+},
+
+
+
+
   getProductReviewsWithResponses: async (req, res) => {
     try {
       const productId = req.params.product_id;

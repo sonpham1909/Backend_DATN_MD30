@@ -107,6 +107,22 @@ const AddressController = {
         .json({ message: "Error deleting address", error: error.message });
     }
   },
+  getDefaultAddress: async (req, res) => {
+    const userId = req.user.id; // Lấy user ID từ thông tin xác thực
+
+    try {
+        const address = await Address.findOne({ id_user: userId, isDefault: true });
+        if (!address) {
+            return res.status(404).json({ message: 'Không tìm thấy địa chỉ mặc định' });
+        }
+        res.status(200).json(address);
+    } catch (error) {
+        console.error('Error fetching default address:', error);
+        res.status(500).json({ message: 'Error fetching default address', error: error.message });
+    }
+},
+
+
 
   // Hàm lấy địa chỉ của người dùng app
   getAllAddressesByUserApp: async (req, res) => {

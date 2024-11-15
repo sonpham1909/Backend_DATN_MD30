@@ -30,6 +30,8 @@ router.delete(
     middlewareController.verifyToken,
     AddressController.deleteAddress // Hàm xử lý xóa địa chỉ
 );
+router.get('/default', middlewareController.verifyToken, AddressController.getDefaultAddress);
+
 //lấy danh sách địa chỉ người dùng phần app 
 router.get('/list_address_user', middlewareController.verifyToken, AddressController.getAllAddressesByUserApp);
 //cập nhật địa chỉ người dùng phần app

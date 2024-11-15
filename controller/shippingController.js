@@ -13,7 +13,21 @@ const shippingMethodController = {
             res.status(500).json({ message: 'Error while fetching shipping methods', error: error.message });
         }
     },
+    // Lấy giá phương thức giao hàng theo ID
+    getShippingCostById: async (req, res) => {
+        const { id } = req.params;
 
+        try {
+            const shippingMethod = await ShippingMethod.findById(id);
+            if (!shippingMethod) {
+                return res.status(404).json({ message: 'Shipping method not found' });
+            }
+            res.status(200).json({ cost: shippingMethod.cost });
+        } catch (error) {
+            console.error('Error while fetching shipping cost by ID:', error);
+            res.status(500).json({ message: 'Error while fetching shipping cost by ID', error: error.message });
+        }
+    },
     // Tạo phương thức giao hàng mới
     createShippingMethod: async (req, res) => {
         const { name, cost, estimatedDeliveryTime, description } = req.body;

@@ -5,6 +5,27 @@ const Role = require('../models/Role');
 
 const userController = {
 
+     getUserByUserVs1 :async (req, res) => {
+        // Lấy userId từ request (có thể lấy từ token hoặc từ params)
+        const userId = req.user?.id || req.params.id;
+      
+        try {
+          // Tìm thông tin người dùng từ bảng User
+          const user = await User.findById(userId);
+      
+          // Kiểm tra nếu không tìm thấy người dùng
+          if (!user) {
+            return res.status(404).json({ message: "User not found" });
+          }
+      
+          // Trả về thông tin của người dùng
+          return res.status(200).json({ user });
+        } catch (error) {
+          console.error("Error fetching user:", error.message);
+          return res.status(500).json({ error: "Internal Server Error" });
+        }
+      },
+
     getUserInfoById: async (req, res) => {
         try {
             const userId = req.params.id;

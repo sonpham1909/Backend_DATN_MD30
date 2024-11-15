@@ -5,7 +5,7 @@ const Variant = require("../models/Variants");
 
 const CartItemController = {
     getCartItems: async (req, res) => {
-        const { userId } = req.params;
+        const userId = req.user.id; // Lấy userId từ req.user sau khi đã xác thực
         try {
             // Tìm giỏ hàng của người dùng
             const cart = await Cart.findOne({ user_id: userId, status: 'isActive' });
@@ -14,15 +14,12 @@ const CartItemController = {
             }
 
             // Tìm các mục trong giỏ hàng
-            const cartItems = await Cart_item.find({ cart_id: cart._id }).populate('product_id','name');
+            const cartItems = await Cart_item.find({ cart_id: cart._id }).populate('product_id', 'name');
 
-            const cartWithName = cartItems.map(item =>({
+            const cartWithName = cartItems.map(item => ({
                 ...item._doc,
                 name: item.product_id?.name
-
-            }
-
-            ))
+            }));
 
             return res.status(200).json(cartWithName);
         } catch (error) {
@@ -30,16 +27,16 @@ const CartItemController = {
             return res.status(500).json({ message: 'Internal server error' });
         }
     },
-    
 
     addToCart: async (req, res) => {
-        const { userId, productId, size, color, quantity, price, variantId } = req.body;
+        const userId = req.user.id; // Lấy userId từ req.user
+        const { productId, size, color, quantity, variantId } = req.body;
 
         try {
             // Tìm giỏ hàng của người dùng
             let cart = await Cart.findOne({ user_id: userId, status: 'isActive' });
 
-            // Tìm variant của sản phẩm theo color và productId
+            // Tìm variant của sản phẩm
             const variant = await Variant.findById(variantId);
 
             // Tìm sản phẩm
@@ -48,12 +45,11 @@ const CartItemController = {
             // Kiểm tra sản phẩm và variant có tồn tại không
             if (!product) {
                 console.log('Product not found');
-                
                 return res.status(404).json({ message: 'Product not found' });
             }
 
             if (!variant) {
-                console.log('Varinat not found');
+                console.log('Variant not found');
                 return res.status(404).json({ message: 'Variant not found' });
             }
 
@@ -79,7 +75,7 @@ const CartItemController = {
             if (cartItems) {
                 cartItems.quantity = Number(cartItems.quantity) + Number(quantity);
                 await cartItems.save();
-                return res.status(201).json(cartItems)
+                return res.status(201).json(cartItems);
             }
 
             // Tạo mới Cart_item và thêm vào giỏ hàng
@@ -103,11 +99,9 @@ const CartItemController = {
     },
 
     updateCartItemQuantity: async (req, res) => {
-        const { cartItemId, quantity, color, productId } = req.body;
+        const { cartItemId, quantity } = req.body;
 
         try {
-
-            
             // Tìm mục giỏ hàng theo cartItemId
             const cartItem = await Cart_item.findById(cartItemId);
 
@@ -115,12 +109,11 @@ const CartItemController = {
                 return res.status(404).json({ message: 'Cart item not found' });
             }
 
-            const variant = await Variant.findOne({color : cartItem.color, product_id:cartItem.product_id});
+            const variant = await Variant.findOne({ color: cartItem.color, product_id: cartItem.product_id });
 
             if (!variant) {
-                console.log('variant item not found');
-                
-                return res.status(404).json({ message: 'variant item not found' });
+                console.log('Variant item not found');
+                return res.status(404).json({ message: 'Variant item not found' });
             }
 
             const variantSize = variant.sizes.find((item) => item.size === cartItem.size);
@@ -129,16 +122,10 @@ const CartItemController = {
                 return res.status(404).json({ message: 'Size not found' });
             }
 
-            if (variantSize.quantity < quantity|| quantity <=0 )
-             {
-                console.log(' quantity not available');
-                
-                return res.status(400).json({ message: ' quantity not available' });
+            if (variantSize.quantity < quantity || quantity <= 0) {
+                console.log('Quantity not available');
+                return res.status(400).json({ message: 'Quantity not available' });
             }
-
-
-
-
 
             // Cập nhật số lượng
             cartItem.quantity = quantity;
@@ -150,6 +137,7 @@ const CartItemController = {
             return res.status(500).json({ message: 'Internal server error' });
         }
     },
+
     deleteCartItem: async (req, res) => {
         const { cartItemId } = req.params;
 
@@ -166,7 +154,31 @@ const CartItemController = {
             console.error('Error deleting cart item:', error);
             return res.status(500).json({ message: 'Internal server error' });
         }
-    }
-}
+    },
+
+
+    // Xóa toàn bộ các mục trong giỏ hàng
+    clearCart: async (req, res) => {
+        const userId = req.user.id; // Lấy userId từ req.user sau khi đã xác thực
+        try {
+            // Tìm giỏ hàng của người dùng
+            const cart = await Cart.findOne({ user_id: userId, status: 'isActive' });
+
+            if (!cart) {
+                return res.status(404).json({ message: 'Cart not found' });
+            }
+
+            // Xóa toàn bộ các mục trong giỏ hàng
+            await Cart_item.deleteMany({ cart_id: cart._id });
+
+            return res.status(200).json({ message: 'All cart items deleted successfully' });
+        } catch (error) {
+            console.error('Error deleting all cart items:', error);
+            return res.status(500).json({ message: 'Internal server error' });
+        }
+    },
+};
+
+
 
 module.exports = CartItemController;

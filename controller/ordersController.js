@@ -4,26 +4,28 @@ const Product = require("../models/Product");
 const Variant = require("../models/Variants");
 
 const ordersController = {
-  getAllOrders: async (req, res) => {
-    try {
-      const orders = await Order.find()
-        .populate("user_id", "full_name email") // Lấy first_name và last_name từ User
-        .populate("address_id", "recipientPhone recipientName addressDetail")
-        .populate("payment_method_id", "name")
-        .populate("shipping_method_id", "name")
-        .exec();
+    getAllOrders: async (req, res) => {
+        try {
+            const orders = await Order.find()
+                .populate('user_id', 'full_name email') // Lấy first_name và last_name từ User
+                .populate('address_id', 'recipientPhone recipientName addressDetail notes')
+                .populate('payment_method_id', 'name')
+                .populate('shipping_method_id','name')
+                .exec();
 
-      // Thêm full_name vào từng đơn hàng
-      const ordersWithFullName = orders.map((order) => ({
-        ...order._doc, // Lấy tất cả thông tin của order
-        full_name: order.user_id?.full_name, // Kiểm tra user_id tồn tại
-        email: order.user_id?.email, // Kiểm tra email tồn tại
-        recipientPhone: order.address_id?.recipientPhone,
-        recipientName: order.address_id?.recipientName,
-        addressDetail: order.address_id?.addressDetail,
-        payment_method: order.payment_method_id?.name,
-        shipping_method: order.shipping_method_id?.name,
-      }));
+            // Thêm full_name vào từng đơn hàng
+            const ordersWithFullName = orders.map(order => ({
+                ...order._doc, // Lấy tất cả thông tin của order
+                full_name: order.user_id?.full_name, // Kiểm tra user_id tồn tại
+                email: order.user_id?.email, // Kiểm tra email tồn tại
+                recipientPhone: order.address_id?.recipientPhone,
+                recipientName: order.address_id?.recipientName,
+                addressDetail: order.address_id?.addressDetail,
+                payment_method: order.payment_method_id?.name,
+                shipping_method:order.shipping_method_id?.name,
+                notes: order.address_id?.notes,
+
+            }));
 
       res.status(200).json(ordersWithFullName);
     } catch (error) {

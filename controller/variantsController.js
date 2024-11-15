@@ -160,6 +160,44 @@ const variantsController = {
       res.status(500).json({ message: "Lỗi hệ thống", error });
     }
   },
+
+
+  // variantController.js
+
+ updateVariantQuantity: async (req, res) => {
+  try {
+    const { product_id } = req.params;
+    const { size, color, quantity } = req.body;
+
+    // Find the variant based on product_id, color, and size
+    const variant = await Variant.findOne({
+      product_id,
+      color,
+      'sizes.size': size,
+    });
+
+    if (!variant) {
+      return res.status(404).json({ message: 'Variant not found' });
+    }
+
+    // Update the quantity for the specific size
+    const sizeIndex = variant.sizes.findIndex(s => s.size === size);
+    if (sizeIndex !== -1) {
+      variant.sizes[sizeIndex].quantity += quantity;
+    }
+
+    await variant.save();
+
+    res.status(200).json({ message: 'Variant quantity updated', variant });
+  } catch (error) {
+    console.error('Error updating variant quantity:', error);
+    res.status(500).json({ message: 'Failed to update variant quantity', error: error.message });
+  }
+ }
+
+// Endpoint to update variant quantity
+
+
 };
 
 module.exports = variantsController;

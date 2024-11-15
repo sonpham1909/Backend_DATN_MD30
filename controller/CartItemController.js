@@ -30,7 +30,7 @@ const CartItemController = {
 
     addToCart: async (req, res) => {
         const userId = req.user.id; // Lấy userId từ req.user
-        const { productId, size, color, quantity, price, variantId } = req.body;
+        const { productId, size, color, quantity, variantId } = req.body;
 
         try {
             // Tìm giỏ hàng của người dùng
@@ -154,7 +154,31 @@ const CartItemController = {
             console.error('Error deleting cart item:', error);
             return res.status(500).json({ message: 'Internal server error' });
         }
-    }
-}
+    },
+
+
+    // Xóa toàn bộ các mục trong giỏ hàng
+    clearCart: async (req, res) => {
+        const userId = req.user.id; // Lấy userId từ req.user sau khi đã xác thực
+        try {
+            // Tìm giỏ hàng của người dùng
+            const cart = await Cart.findOne({ user_id: userId, status: 'isActive' });
+
+            if (!cart) {
+                return res.status(404).json({ message: 'Cart not found' });
+            }
+
+            // Xóa toàn bộ các mục trong giỏ hàng
+            await Cart_item.deleteMany({ cart_id: cart._id });
+
+            return res.status(200).json({ message: 'All cart items deleted successfully' });
+        } catch (error) {
+            console.error('Error deleting all cart items:', error);
+            return res.status(500).json({ message: 'Internal server error' });
+        }
+    },
+};
+
+
 
 module.exports = CartItemController;

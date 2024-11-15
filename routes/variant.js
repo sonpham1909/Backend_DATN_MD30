@@ -27,4 +27,9 @@ router.post(
   variantsController.createVariantVer2
 );
 
+router.put('/:product_id/update-quantity', 
+  middlewareController.verifyToken,
+  variantsController.updateVariantQuantity);
+
+
 module.exports = router;

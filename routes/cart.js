@@ -9,5 +9,6 @@ router.get('/cart_by_user', middleWareController.verifyToken, CartItemController
 router.post('/add_to_cart', middleWareController.verifyToken, CartItemController.addToCart);
 router.put('/update_quantity', middleWareController.verifyToken, CartItemController.updateCartItemQuantity);
 router.delete('/:cartItemId/delete', middleWareController.verifyToken, CartItemController.deleteCartItem);
+router.delete('/clearCart', middleWareController.verifyToken, CartItemController.clearCart);
 
 module.exports = router;

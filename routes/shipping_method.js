@@ -17,6 +17,7 @@ router.put('/update_shipping_method', shippingMethodController.updateShippingMet
 
 //delete shipping method
 router.delete('/remove_shipping_method', shippingMethodController.deleteShippingMethod);
+router.get('/:id/cost', shippingMethodController.getShippingCostById);
 
 module.exports = router;
 

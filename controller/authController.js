@@ -251,16 +251,21 @@ const authController = {
 
 
                 // Kiểm tra xem có vai trò admin hay không
-                const isAdmin = await Promise.any(
-                    userRoles.map(async (userRole) => {
-                        const role = await Role.findById(userRole.roleId);
-                        return role && role.name === 'admin';
-                    })
-                ).catch(() => false);
+                let isAdmin = false;
 
-                if (isAdmin === false) {
+                for (let userRole of userRoles) {
+                    const role = await Role.findById(userRole.roleId);
+                    if (role && role.name === 'admin') {
+                        isAdmin = true;
+                        break;
+                    }
+                }
+
+                if (!isAdmin) {
                     return res.status(403).json({ message: 'Bạn không phải là admin' });
                 }
+
+
 
 
 

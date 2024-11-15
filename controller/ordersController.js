@@ -12,7 +12,7 @@ const ordersController = {
         try {
             const orders = await Order.find()
                 .populate('user_id', 'full_name email') // Lấy first_name và last_name từ User
-                .populate('address_id', 'recipientPhone recipientName addressDetail')
+                .populate('address_id', 'recipientPhone recipientName addressDetail notes')
                 .populate('payment_method_id', 'name')
                 .populate('shipping_method_id','name')
                 .exec();
@@ -26,7 +26,8 @@ const ordersController = {
                 recipientName: order.address_id?.recipientName,
                 addressDetail: order.address_id?.addressDetail,
                 payment_method: order.payment_method_id?.name,
-                shipping_method:order.shipping_method_id?.name
+                shipping_method:order.shipping_method_id?.name,
+                notes: order.address_id?.notes,
 
             }));
 

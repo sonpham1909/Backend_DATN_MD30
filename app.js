@@ -25,7 +25,7 @@ var ProductRouter = require('./routes/product');
 var OrderRouter = require('./routes/order');
 var VariantRouter = require('./routes/variant');
 var OrderItemRouter = require('./routes/order_item'); 
-
+var MessageRouter = require('./routes/message'); 
 
 var app = express();
 
@@ -54,7 +54,7 @@ app.use('/v1/ProductsubCategorys',Product_sub_CategoryRouter);
 app.use('/v1/Review',ReviewRouter);
 app.use('/v1/favorite',FavoriteMethodRouter);
 app.use('/v1/products',ProductRouter);
-
+app.use('/v1/message',MessageRouter);
 app.use('/v1/shippingMethods', ShippingMethodRouter);
 app.use('/v1/orders', OrderRouter);
 app.use('/v1/variants', VariantRouter);

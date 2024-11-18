@@ -1,45 +1,56 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const orderSchema = new mongoose.Schema(
   {
     user_id: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      required: true
-    },
-    address_id: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Address',
-      required: true
-    },
-    total_products: {
-      type: Number,
-      default: 0
-    },
-    status: {
-      type: String,
-      default: 'pending'
-    },
-    shipping_method_id: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'ShippingMethod',
-      required: true
-    },
-    payment_method_id: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'PaymentMethod',
-      required: true
+      ref: "User",
+      required: true,
     },
     total_amount: {
       type: Number,
-      required: true
+      required: true,
     },
+    
+    total_products: {
+      type: Number,
+      required: true,
+    },
+    recipientName: {
+      type: String,
+      required: true,
+    },
+    recipientPhone: {
+      type: String,
+      required: true,
+    },
+    addressDetail: {
+      street: String,
+      ward: String,
+      district: String,
+      city: String,
+    },
+    payment_method_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "PaymentMethod",
+      required: true,
+    },
+    shipping_method_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "ShippingMethod",
+      required: true,
+    },
+    status: {
+      type: String,
+      default: "pending",
+    },
+
     cancelReason: {
       type: String,
-      default: '' // Trường lý do hủy
-    }
+      default: "", // Trường lý do hủy
+    },
   },
   { timestamps: true }
 );
 
-module.exports = mongoose.model('Order', orderSchema);
+module.exports = mongoose.model("Order", orderSchema);

@@ -125,7 +125,8 @@ const CartItemController = {
             if (variantSize.quantity < quantity || quantity <= 0) {
                 console.log('Quantity not available');
                 return res.status(400).json({ message: 'Quantity not available' });
-            }
+              }
+              
 
             // Cập nhật số lượng
             cartItem.quantity = quantity;

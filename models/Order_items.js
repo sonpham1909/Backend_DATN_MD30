@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const orderItemsSchemma = mongoose.Schema({
     order_id:{
         type: mongoose.Schema.Types.ObjectId,
-        ref:'Orders',
+        ref:'Order',
         require: true
     },
     product_id:{
@@ -12,9 +12,7 @@ const orderItemsSchemma = mongoose.Schema({
         require: true
     },
     image_variant:{
-        type: String,
-       
-
+        type: String,       
     },
     size:{
         type: String,

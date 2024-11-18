@@ -14,9 +14,11 @@ const ReviewSchema = new Schema({
     // Sử dụng ObjectId cho user_id để tham chiếu đến bảng Users (nếu có)
     required: true 
   },
-  rating: { 
-    type: Number, 
-    required: true 
+  rating: {
+    type: Number,
+    required: true,
+    min: 1,
+    max: 5,
   },
   comment: { 
     type: String, 
@@ -29,7 +31,7 @@ const ReviewSchema = new Schema({
     type: String 
   },
   img: {
-    type: String 
+    type: [String], // Thay đổi từ String thành mảng String
   },
   image_variant:{
     type:String,

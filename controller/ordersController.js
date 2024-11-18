@@ -2,6 +2,7 @@ const Order = require("../models/order");
 const Order_items = require("../models/Order_items");
 const Product = require("../models/Product");
 const Variant = require("../models/Variants");
+const Address = require("../models/Address");
 
 const ordersController = {
     getAllOrders: async (req, res) => {
@@ -228,19 +229,6 @@ const ordersController = {
         .json({ message: "Không thể xác thực người dùng." });
     }
 
-    if (!address_id) {
-      console.error("Thiếu address_id");
-    }
-    if (!shipping_method_id) {
-      console.error("Thiếu shipping_method_id");
-    }
-    if (!payment_method_id) {
-      console.error("Thiếu payment_method_id");
-    }
-    if (!cartItems || cartItems.length === 0) {
-      console.error("Giỏ hàng trống hoặc thiếu thông tin về giỏ hàng");
-    }
-
     if (
       !address_id ||
       !shipping_method_id ||
@@ -260,6 +248,12 @@ const ordersController = {
     }
 
     try {
+      // Lấy chi tiết địa chỉ
+      const address = await Address.findById(address_id);
+      if (!address) {
+        return res.status(404).json({ message: "Không tìm thấy địa chỉ" });
+      }
+
       // Tính tổng giá trị đơn hàng và tổng số lượng sản phẩm
       const total_amount = cartItems.reduce(
         (total, item) => total + item.price * item.quantity,
@@ -273,10 +267,17 @@ const ordersController = {
       console.log("Total amount:", total_amount);
       console.log("Total products:", total_products);
 
-      // Tạo đơn hàng mới
+      // Tạo đơn hàng mới với thông tin chi tiết địa chỉ
       const newOrder = new Order({
         user_id: userId,
-        address_id,
+        recipientName: address.recipientName,
+        recipientPhone: address.recipientPhone,
+        addressDetail: {
+          street: address.addressDetail.street,
+          ward: address.addressDetail.ward,
+          district: address.addressDetail.district,
+          city: address.addressDetail.city,
+        },
         shipping_method_id,
         payment_method_id,
         total_products,
@@ -344,9 +345,6 @@ const ordersController = {
         .json({ message: "Lỗi khi tạo đơn hàng", error: error.message });
     }
   },
-  // Các hàm khác
-
-  // Các hàm khác...
 
   getOrdersByStatus: async (req, res) => {
     try {
@@ -356,7 +354,6 @@ const ordersController = {
       // Tìm tất cả đơn hàng của người dùng có trạng thái tương ứng
       const orders = await Order.find({ user_id: userId, status })
         .populate("user_id", "full_name email")
-        .populate("address_id", "recipientPhone recipientName addressDetail")
         .populate("payment_method_id", "name")
         .populate("shipping_method_id", "name")
         .exec();
@@ -366,9 +363,9 @@ const ordersController = {
         ...order._doc,
         full_name: order.user_id?.full_name,
         email: order.user_id?.email,
-        recipientPhone: order.address_id?.recipientPhone,
-        recipientName: order.address_id?.recipientName,
-        addressDetail: order.address_id?.addressDetail,
+        recipientPhone: order.recipientPhone,
+        recipientName: order.recipientName,
+        addressDetail: order.addressDetail,
         payment_method: order.payment_method_id?.name,
         shipping_method: order.shipping_method_id?.name,
       }));
@@ -384,23 +381,23 @@ const ordersController = {
 
   getOrderItemById: async (req, res) => {
     const { orderId } = req.params;
-  
+
     try {
       // Tìm kiếm đơn hàng dựa trên orderId
       const order = await Order.findById(orderId)
         .populate("user_id", "full_name email phone_number") // Lấy thông tin người dùng
-        .populate("address_id", "recipientName recipientPhone addressDetail") // Lấy thông tin địa chỉ
         .populate("payment_method_id", "name") // Lấy phương thức thanh toán
         .populate("shipping_method_id", "name"); // Lấy phương thức vận chuyển
-  
+
       if (!order) {
         return res.status(404).json({ message: "Order not found" });
       }
-  
+
       // Lấy các mục đơn hàng liên quan đến đơn hàng này và populate sản phẩm
-      const orderItems = await Order_items.find({ order_id: orderId })
-        .populate("product_id"); // Populate các trường của sản phẩm cần thiết
-  
+      const orderItems = await Order_items.find({ order_id: orderId }).populate(
+        "product_id"
+      ); // Populate các trường của sản phẩm cần thiết
+
       res.status(200).json({ order, items: orderItems });
     } catch (error) {
       console.error("Error while fetching order:", error);
@@ -408,10 +405,59 @@ const ordersController = {
         .status(500)
         .json({ message: "Error while fetching order", error: error.message });
     }
-  }
-  
+  },
+  getPurchasedProducts: async (req, res) => {
+    try {
+      const userId = req.user.id; // Lấy user_id từ xác thực của người dùng
 
-  // Các hàm khác
+      // Lấy tất cả các đơn hàng có trạng thái giao hàng thành công
+      const orders = await Order.find({
+        user_id: userId,
+        status: "delivered",
+      });
+
+      if (!orders || orders.length === 0) {
+        return res
+          .status(404)
+          .json({ message: "Không có sản phẩm nào đã mua." });
+      }
+
+      // Lấy danh sách order_ids từ các đơn hàng
+      const orderIds = orders.map((order) => order._id);
+
+      // Lấy tất cả các mục đơn hàng từ bảng OrderItem với các order_ids đó và populate thông tin sản phẩm
+      const orderItems = await Order_items.find({
+        order_id: { $in: orderIds },
+      }).populate("product_id", "name price imageUrls"); // Lấy thông tin sản phẩm từ bảng Product
+
+      console.log("Order Items:", orderItems);
+
+      if (!orderItems || orderItems.length === 0) {
+        return res.status(404).json({ message: "Không có mục đơn hàng nào." });
+      }
+
+      // Xử lý và định dạng dữ liệu để trả về
+      const purchasedProducts = orderItems.map((item) => ({
+        product_id: item.product_id._id, // Đảm bảo rằng bạn trả về `product_id`
+        productName: item.product_id?.name || "Sản phẩm không xác định",
+        productPrice: item.price
+          ? item.price.toLocaleString("vi-VN") + " Đ"
+          : "N/A",
+        size: item.size,
+        color: item.color,
+        imageVariant:
+          item.image_variant || item.product_id?.imageUrls?.[0] || "N/A",
+        quantity: item.quantity,
+      }));
+
+      res.status(200).json(purchasedProducts);
+    } catch (error) {
+      console.error("Error while fetching purchased products:", error);
+      res
+        .status(500)
+        .json({ message: "Lỗi khi lấy sản phẩm đã mua", error: error.message });
+    }
+  },
 };
 
 module.exports = ordersController;

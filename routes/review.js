@@ -12,6 +12,11 @@ router.get(
   middlewareController.verifyToken,
   ReviewController.getUserReviews // Hàm xử lý lấy đánh giá của người dùng
 );
+router.post(
+  "/addReviewByApp",
+  middlewareController.verifyToken,
+  ReviewController.addReview
+);
 // Tạo đánh giá
 router.post(
   "/create_review",
@@ -54,5 +59,7 @@ router.get(
   middlewareController.verifyToken,
   ReviewController.searchReviews
 );
+
+
 
 module.exports = router;

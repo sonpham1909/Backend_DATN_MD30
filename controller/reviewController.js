@@ -1,39 +1,82 @@
 const mongoose = require("mongoose"); // Thêm dòng này để import mongoose
-
 const Review = require("../models/Review");
 const Variant = require("../models/Variants");
+const OrderItem = require("../models/Order_items"); // Giả sử bạn có bảng OrderItem
+const Order = require("../models/order");
+
 const ReviewController = {
   // Thêm đánh giá mới
 
-
+  addReview: async (req, res) => {
+    try {
+      const userId = req.user.id; // Lấy user_id từ xác thực của người dùng
+      const { product_id, rating, comment, color, size, image_variant, img } = req.body;
+  
+      // Kiểm tra nếu thông tin rating hoặc product_id không tồn tại
+      if (!product_id || !rating) {
+        return res.status(400).json({ message: "Thiếu thông tin cần thiết." });
+      }
+  
+      // Kiểm tra xem người dùng đã đánh giá sản phẩm này chưa
+      const existingReview = await Review.findOne({ user_id: userId, product_id });
+      if (existingReview) {
+        return res.status(400).json({ message: "Bạn đã đánh giá sản phẩm này." });
+      }
+  
+      // Tạo một review mới
+      const newReview = new Review({
+        user_id: userId,
+        product_id,
+        rating,
+        comment,
+        color,
+        size,
+        image_variant,
+        img: img || [], // Lưu ảnh do người dùng tải lên (nếu có)
+      });
+  
+      // Lưu review vào cơ sở dữ liệu
+      await newReview.save();
+  
+      res.status(201).json({
+        message: "Đánh giá đã được thêm thành công",
+        review: newReview,
+      });
+    } catch (error) {
+      console.error("Error while adding review:", error);
+      res.status(500).json({ message: "Lỗi khi thêm đánh giá", error: error.message });
+    }
+  },
+  
+  
+  
 
   getUserReviews: async (req, res) => {
     try {
-        const userId = req.user?.id;
+      const userId = req.user?.id;
 
-        if (!userId) {
-            return res.status(400).json({ message: "User ID is required" });
-        }
+      if (!userId) {
+        return res.status(400).json({ message: "User ID is required" });
+      }
 
-        // Lấy tất cả đánh giá của một người dùng
-        const userReviews = await Review.find({ user_id: userId });
+      // Lấy tất cả đánh giá của một người dùng
+      const userReviews = await Review.find({ user_id: userId });
 
-        if (userReviews.length === 0) {
-            return res.status(404).json({ message: "No reviews found for this user" });
-        }
+      if (userReviews.length === 0) {
+        return res
+          .status(404)
+          .json({ message: "No reviews found for this user" });
+      }
 
-        res.status(200).json(userReviews);
+      res.status(200).json(userReviews);
     } catch (error) {
-        console.error("Error fetching user reviews:", error);
-        res.status(500).json({
-            message: "Error fetching user reviews",
-            error: error.message,
-        });
+      console.error("Error fetching user reviews:", error);
+      res.status(500).json({
+        message: "Error fetching user reviews",
+        error: error.message,
+      });
     }
-},
-
-
-
+  },
 
   getProductReviewsWithResponses: async (req, res) => {
     try {
@@ -57,23 +100,22 @@ const ReviewController = {
       res.status(200).json(reviews);
     } catch (error) {
       console.error("Error fetching product reviews with responses:", error);
-      res
-        .status(500)
-        .json({
-          message: "Error fetching product reviews with responses",
-          error: error.message,
-        });
+      res.status(500).json({
+        message: "Error fetching product reviews with responses",
+        error: error.message,
+      });
     }
   },
 
   create_review: async (req, res) => {
     try {
-
-      const variant = await Variant.findOne({color: req.body.color, product_id:req.body.product_id});
-      if(!variant){
-        return res.status(404).json({message:'Variant not found'});
+      const variant = await Variant.findOne({
+        color: req.body.color,
+        product_id: req.body.product_id,
+      });
+      if (!variant) {
+        return res.status(404).json({ message: "Variant not found" });
       }
-
 
       const newReview = new Review({
         product_id: req.body.product_id,
@@ -83,7 +125,7 @@ const ReviewController = {
         color: req.body.color, // Tùy chọn
         size: req.body.size, // Tùy chọn
         img: req.body.img, // Thêm trường img
-        image_variant:variant.image
+        image_variant: variant.image,
       });
       const savedReview = await newReview.save();
       res.status(201).json(savedReview);
@@ -129,12 +171,10 @@ const ReviewController = {
       // Cập nhật đánh giá
       Object.assign(review, updatedData);
       const updatedReview = await review.save();
-      res
-        .status(200)
-        .json({
-          message: "Review updated successfully",
-          review: updatedReview,
-        });
+      res.status(200).json({
+        message: "Review updated successfully",
+        review: updatedReview,
+      });
     } catch (error) {
       console.error("Error updating review:", error);
       res
@@ -153,12 +193,10 @@ const ReviewController = {
         return res.status(404).json({ message: "Review not found" });
       }
 
-      res
-        .status(200)
-        .json({
-          message: "Review deleted successfully",
-          reviewId: deletedReview._id,
-        });
+      res.status(200).json({
+        message: "Review deleted successfully",
+        reviewId: deletedReview._id,
+      });
     } catch (error) {
       console.error("Error deleting review:", error);
       res

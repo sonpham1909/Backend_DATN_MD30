@@ -45,7 +45,7 @@ const FavoriteController = {
     const userId = req.user?.id;
   
     try {
-      const favorites = await Favorite.find({ userId }).populate("productId", "_id name price imageUrls variants material description");
+      const favorites = await Favorite.find({ userId }).populate("productId");
   
       if (!favorites || favorites.length === 0) {
         return res.status(200).json({ message: "No favorites found", favorites: [] });
@@ -59,61 +59,7 @@ const FavoriteController = {
     }
   }
 
-  
-  // getFavorites: async (req, res) => {
-  //   const userId = req.user?.id;
-  
-  //   try {
-  //     // Loại bỏ tham số thứ hai trong populate để lấy tất cả các trường từ Product
-  //     const favorites = await Favorite.find({ userId }).populate("productId");
-  //     console.log("Favorites:", favorites);
-  //     if (!favorites || favorites.length === 0) {
-  //       return res.status(200).json({ message: "No favorites found", favorites: [] });
-  //     }
 
-  //     const favoriteProducts = favorites.map(fav => fav.productId); 
-  //     console.log("Favorite Products:", favoriteProducts);
-  //     // lấy toàn bộ thông tin của sản phẩm
-  //     return res.status(200).json({ favorites: favoriteProducts });
-  //   } catch (error) {
-  //     console.error("Error fetching favorites:", error.message);
-  //     return res.status(500).json({ error: "Internal Server Error" });
-  //   }
-  // }
-  // getFavorites: async (req, res) => {
-  //   const userId = req.user?.id;
-  //   try {
-  //     // Lấy tất cả các yêu thích cho user và populate các thông tin sản phẩm
-  //     const favorites = await Favorite.find({ userId }).populate(
-  //       "productId",
-  //       "_id name imageUrls variants"
-  //     );
-
-  //     if (!favorites || favorites.length === 0) {
-  //       return res
-  //         .status(200)
-  //         .json({ message: "No favorites found", favorites: [] });
-  //     }
-
-  //     // Lấy dữ liệu sản phẩm và kiểm tra price trong variants
-  //     const favoriteProducts = favorites.map((fav) => {
-  //       const product = fav.productId;
-  //       const price =
-  //         product.variants && product.variants[0]
-  //           ? product.variants[0].price
-  //           : "Chưa có giá";
-  //       return {
-  //         ...product._doc, // Lấy toàn bộ dữ liệu từ productId
-  //         price, // Thêm price từ variants vào
-  //       };
-  //     });
-
-  //     return res.status(200).json({ favorites: favoriteProducts });
-  //   } catch (error) {
-  //     console.error("Error fetching favorites:", error.message);
-  //     return res.status(500).json({ error: "Internal Server Error" });
-  //   }
-  // },
   
 };
 

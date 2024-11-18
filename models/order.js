@@ -1,54 +1,56 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
+const orderSchema = new mongoose.Schema(
+  {
+    user_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    total_amount: {
+      type: Number,
+      required: true,
+    },
+    
+    total_products: {
+      type: Number,
+      required: true,
+    },
+    recipientName: {
+      type: String,
+      required: true,
+    },
+    recipientPhone: {
+      type: String,
+      required: true,
+    },
+    addressDetail: {
+      street: String,
+      ward: String,
+      district: String,
+      city: String,
+    },
+    payment_method_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "PaymentMethod",
+      required: true,
+    },
+    shipping_method_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "ShippingMethod",
+      required: true,
+    },
+    status: {
+      type: String,
+      default: "pending",
+    },
 
-const orderSchemma = mongoose.Schema(
-    {
-        user_id: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'User',
-            require: true
-        },
-        address_id:{
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'Address',
-            require:true
-        },
-        total_products:{
-            type: Number,
-        
-        },
-        status:{
-            type: String,
-            default:'pending'
-        },
-        shipping_method_id:{
-            type: mongoose.Schema.Types.ObjectId,
-            ref:'ShippingMethod',
-            require:true
-
-        },
-        payment_method_id:{
-            type: mongoose.Schema.Types.ObjectId,
-            ref:'PaymentMethod',
-            require:true
-
-        },
-        total_amount:{
-            type: Number,
-            require: true
-
-        },
-        cancelReason: {
-            type: String,
-            default: '' // Trường lý do hủy
-        },
-
-
-
-
-
-    },{timestamps: true}
+    cancelReason: {
+      type: String,
+      default: "", // Trường lý do hủy
+    },
+  },
+  { timestamps: true }
 );
 
-
-module.exports = mongoose.model('Orders',orderSchemma);
+module.exports = mongoose.model("Order", orderSchema);

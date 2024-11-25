@@ -17,6 +17,8 @@ router.get(
 
 router.get("/search_products", productController.searchProduct);
 
+router.get("/search_similar", middlewareController.verifyToken,productController.searchSimilarProducts);
+
 //Lấy sản phẩm phổ biến
 
 router.get(

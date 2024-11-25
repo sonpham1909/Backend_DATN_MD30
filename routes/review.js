@@ -15,6 +15,8 @@ router.get(
 router.post(
   "/addReviewByApp",
   middlewareController.verifyToken,
+  uploadphoto.array('imageUrls',10),
+  resizeAndUploadImage,
   ReviewController.addReview
 );
 // Tạo đánh giá

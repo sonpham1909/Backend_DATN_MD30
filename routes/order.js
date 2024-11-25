@@ -14,6 +14,7 @@ router.get("/", orderController.getAllOrders);
 router.get("/status/:status", middlewareController.verifyToken, orderController.getOrdersByStatus);
 router.get('/:orderId/byOrder', middlewareController.verifyToken, orderController.getOrderItemById);
 router.get('/purchased', middlewareController.verifyToken, orderController.getPurchasedProducts);
+router.post("/cancelByApp/:orderId", middlewareController.verifyToken, orderController.cancelOrderByApp);
 
 //create order
 router.post("/create_order", orderController.createOrder);

@@ -16,9 +16,7 @@ const replySchema = new mongoose.Schema(
     content: {
       type: String,
     },
-    img: {
-      type: [String], // Thay đổi từ String thành mảng String
-    },
+    img: [{ type: String }], // Thay đổi thành mảng để lưu trữ nhiều hình ảnh,
     status: {
       type: Boolean, // Trạng thái đã xem
       default: false,

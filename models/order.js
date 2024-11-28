@@ -48,6 +48,7 @@ const orderSchema = new mongoose.Schema(
     cancelReason: {
       type: String,
       default: "", // Trường lý do hủy
+      
     },
   },
   { timestamps: true }

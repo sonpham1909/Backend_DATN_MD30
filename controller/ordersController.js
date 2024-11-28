@@ -3,13 +3,15 @@ const Order_items = require("../models/Order_items");
 const Product = require("../models/Product");
 const Variant = require("../models/Variants");
 const Address = require("../models/Address");
+const User = require("../models/User");
+const notificationCotroller = require("./notificationCotroller");
 
 const ordersController = {
     getAllOrders: async (req, res) => {
         try {
             const orders = await Order.find()
                 .populate('user_id', 'full_name email') // Lấy first_name và last_name từ User
-                .populate('address_id', 'recipientPhone recipientName addressDetail notes')
+                
                 .populate('payment_method_id', 'name')
                 .populate('shipping_method_id','name')
                 .exec();
@@ -19,9 +21,6 @@ const ordersController = {
                 ...order._doc, // Lấy tất cả thông tin của order
                 full_name: order.user_id?.full_name, // Kiểm tra user_id tồn tại
                 email: order.user_id?.email, // Kiểm tra email tồn tại
-                recipientPhone: order.address_id?.recipientPhone,
-                recipientName: order.address_id?.recipientName,
-                addressDetail: order.address_id?.addressDetail,
                 payment_method: order.payment_method_id?.name,
                 shipping_method:order.shipping_method_id?.name,
                 notes: order.address_id?.notes,
@@ -136,49 +135,53 @@ const ordersController = {
   },
 
   cancelOrder: async (req, res) => {
-    const { orderId, reason } = req.body; // Lấy thông tin orderId và lý do từ request
+    const { orderId, cancelReason } = req.body; // Lấy thông tin từ request body
+
+    // Kiểm tra xem có đủ thông tin không
+    if (!orderId || !cancelReason) {
+        return res.status(400).json({ message: "orderId and cancelReason are required" });
+    }
+
+    console.log("Canceling order with ID:", orderId); // Log ID đơn hàng
+    console.log("Cancel reason:", cancelReason); // Log lý do hủy
 
     try {
-      const order = await Order.findById(orderId);
+        const order = await Order.findById(orderId); // Tìm đơn hàng theo orderId
 
-      if (!order) {
-        return res.status(404).json({ message: "Order not found" });
-      }
+        if (!order) {
+            return res.status(404).json({ message: "Order not found" });
+        }
 
-      if (order.status === "canceled") {
-        return res
-          .status(400)
-          .json({ message: 'Order is already with status "canceled"' });
-      }
-      const orderItems = await Order_items.find({ order_id: orderId });
-      if (!orderItems) {
-        return res.status(404).json({ message: "Order items not found" });
-      }
+        if (order.status === "canceled") {
+            return res.status(400).json({ message: 'Order is already with status "canceled"' });
+        }
 
-      order.status = "canceled"; // Cập nhật trạng thái đơn hàng
-      order.cancelReason = reason || ""; // Lưu lý do hủy nếu có
-      await order.save();
+        // Cập nhật trạng thái và lý do hủy
+        order.status = "canceled";
+        order.cancelReason = cancelReason; // Lưu lý do hủy
+        await order.save(); // Lưu thay đổi vào cơ sở dữ liệu
 
-      await Promise.all(
-        orderItems.map(async (item) => {
-          await Variant.findOneAndUpdate(
-            {
-              product_id: item.product_id,
-              color: item.color,
-              "sizes.size": item.size,
-            },
-            { $inc: { "sizes.$.quantity": item.quantity } } // Giảm số lượng biến thể
-          );
-        })
-      );
+        // Cập nhật lại số lượng sản phẩm cho các mục đơn hàng liên quan
+        const orderItems = await Order_items.find({ order_id: orderId });
+        await Promise.all(
+            orderItems.map(async (item) => {
+                await Variant.findOneAndUpdate(
+                    {
+                        product_id: item.product_id,
+                        color: item.color,
+                        "sizes.size": item.size,
+                    },
+                    { $inc: { "sizes.$.quantity": item.quantity } } // Tăng số lượng cho biến thể
+                );
+            })
+        );
 
-      res.status(200).json({ message: "Order canceled successfully", order });
+        res.status(200).json({ message: "Order canceled successfully", order });
     } catch (error) {
-      res
-        .status(500)
-        .json({ message: "Error canceling order", error: error.message });
+        console.error("Error canceling order:", error);
+        res.status(500).json({ message: "Error canceling order", error: error.message });
     }
-  },
+},
   changeStatusOrder: async (req, res) => {
     const orderId = req.params.orderId;
     const { status } = req.body; // 'shipping', 'delivered', 'cancelled'
@@ -218,133 +221,136 @@ const ordersController = {
     console.log("Request reached /create_order_ByApp"); // Kiểm tra xem đã vào hàm hay chưa
     console.log("Request body:", req.body); // Log thông tin của request body
 
-    const { address_id, shipping_method_id, payment_method_id, cartItems } =
-      req.body;
+    const { address_id, shipping_method_id, payment_method_id, cartItems } = req.body;
     const userId = req.user ? req.user.id : null; // Lấy user ID từ thông tin xác thực
 
     if (!userId) {
-      console.error("Không thể xác thực người dùng. user_id:", userId);
-      return res
-        .status(400)
-        .json({ message: "Không thể xác thực người dùng." });
+        console.error("Không thể xác thực người dùng. user_id:", userId);
+        return res.status(400).json({ message: "Không thể xác thực người dùng." });
     }
 
-    if (
-      !address_id ||
-      !shipping_method_id ||
-      !payment_method_id ||
-      !cartItems ||
-      cartItems.length === 0
-    ) {
-      console.error("Thiếu thông tin cần thiết hoặc giỏ hàng trống.", {
-        address_id,
-        shipping_method_id,
-        payment_method_id,
-        cartItemsLength: cartItems ? cartItems.length : 0,
-      });
-      return res
-        .status(400)
-        .json({ message: "Thiếu thông tin cần thiết hoặc giỏ hàng trống." });
+    if (!address_id || !shipping_method_id || !payment_method_id || !cartItems || cartItems.length === 0) {
+        console.error("Thiếu thông tin cần thiết hoặc giỏ hàng trống.", {
+            address_id,
+            shipping_method_id,
+            payment_method_id,
+            cartItemsLength: cartItems ? cartItems.length : 0,
+        });
+        return res.status(400).json({ message: "Thiếu thông tin cần thiết hoặc giỏ hàng trống." });
     }
 
     try {
-      // Lấy chi tiết địa chỉ
-      const address = await Address.findById(address_id);
-      if (!address) {
-        return res.status(404).json({ message: "Không tìm thấy địa chỉ" });
-      }
-
-      // Tính tổng giá trị đơn hàng và tổng số lượng sản phẩm
-      const total_amount = cartItems.reduce(
-        (total, item) => total + item.price * item.quantity,
-        0
-      );
-      const total_products = cartItems.reduce(
-        (total, item) => total + item.quantity,
-        0
-      );
-
-      console.log("Total amount:", total_amount);
-      console.log("Total products:", total_products);
-
-      // Tạo đơn hàng mới với thông tin chi tiết địa chỉ
-      const newOrder = new Order({
-        user_id: userId,
-        recipientName: address.recipientName,
-        recipientPhone: address.recipientPhone,
-        addressDetail: {
-          street: address.addressDetail.street,
-          ward: address.addressDetail.ward,
-          district: address.addressDetail.district,
-          city: address.addressDetail.city,
-        },
-        shipping_method_id,
-        payment_method_id,
-        total_products,
-        total_amount,
-        status: "pending",
-      });
-
-      // Lưu đơn hàng vào cơ sở dữ liệu
-      await newOrder.save();
-      console.log("Order created successfully:", newOrder);
-
-      // Tạo các mục đơn hàng và cập nhật số lượng biến thể sản phẩm
-      for (const cartItem of cartItems) {
-        console.log("Processing cart item:", cartItem);
-
-        const orderItem = new Order_items({
-          order_id: newOrder._id,
-          product_id: cartItem.product_id,
-          size: cartItem.size,
-          color: cartItem.color,
-          quantity: cartItem.quantity,
-          price: cartItem.price,
-          total_amount: cartItem.price * cartItem.quantity,
-          image_variant: cartItem.image_variant,
-        });
-        await orderItem.save();
-        console.log("Order item saved:", orderItem);
-
-        // Cập nhật số lượng biến thể sản phẩm
-        const variant = await Variant.findOne({
-          product_id: cartItem.product_id,
-          color: cartItem.color,
-          "sizes.size": cartItem.size,
-        });
-
-        if (variant) {
-          const sizeIndex = variant.sizes.findIndex(
-            (s) => s.size === cartItem.size
-          );
-          if (sizeIndex > -1) {
-            variant.sizes[sizeIndex].quantity -= cartItem.quantity;
-            console.log(
-              `Updated variant quantity for product_id ${cartItem.product_id}:`,
-              variant.sizes[sizeIndex]
-            );
-          } else {
-            console.error(
-              `Size ${cartItem.size} not found in variant for product_id ${cartItem.product_id}`
-            );
-          }
-          await variant.save();
-          console.log("Variant updated successfully:", variant);
-        } else {
-          console.error(
-            `Variant not found for product_id ${cartItem.product_id}, color ${cartItem.color}, size ${cartItem.size}`
-          );
+        // Lấy chi tiết địa chỉ
+        const address = await Address.findById(address_id);
+        if (!address) {
+            return res.status(404).json({ message: "Không tìm thấy địa chỉ" });
         }
-      }
 
-      res.status(201).json({ message: "Đặt hàng thành công", order: newOrder });
+        // Tính tổng giá trị đơn hàng và tổng số lượng sản phẩm
+        const total_amount = cartItems.reduce((total, item) => total + item.price * item.quantity, 0);
+        const total_products = cartItems.reduce((total, item) => total + item.quantity, 0);
+
+        console.log("Total amount:", total_amount);
+        console.log("Total products:", total_products);
+
+        // Tạo đơn hàng mới với thông tin chi tiết địa chỉ
+        const newOrder = new Order({
+            user_id: userId,
+            recipientName: address.recipientName,
+            recipientPhone: address.recipientPhone,
+            addressDetail: {
+                street: address.addressDetail.street,
+                ward: address.addressDetail.ward,
+                district: address.addressDetail.district,
+                city: address.addressDetail.city,
+            },
+            shipping_method_id,
+            payment_method_id,
+            total_products,
+            total_amount,
+            status: "pending",
+        });
+
+        // Lưu đơn hàng vào cơ sở dữ liệu
+        await newOrder.save();
+        console.log("Order created successfully:", newOrder);
+
+        // Tạo các mục đơn hàng và cập nhật số lượng biến thể sản phẩm
+        for (const cartItem of cartItems) {
+            console.log("Processing cart item:", cartItem);
+
+            const orderItem = new Order_items({
+                order_id: newOrder._id,
+                product_id: cartItem.product_id,
+                size: cartItem.size,
+                color: cartItem.color,
+                quantity: cartItem.quantity,
+                price: cartItem.price,
+                total_amount: cartItem.price * cartItem.quantity,
+                image_variant: cartItem.image_variant,
+            });
+            await orderItem.save();
+            console.log("Order item saved:", orderItem);
+
+            // Cập nhật số lượng biến thể sản phẩm
+            const variant = await Variant.findOne({
+                product_id: cartItem.product_id,
+                color: cartItem.color,
+                "sizes.size": cartItem.size,
+            });
+
+            if (variant) {
+                const sizeIndex = variant.sizes.findIndex((s) => s.size === cartItem.size);
+                if (sizeIndex > -1) {
+                    variant.sizes[sizeIndex].quantity -= cartItem.quantity;
+                    console.log(`Updated variant quantity for product_id ${cartItem.product_id}:`, variant.sizes[sizeIndex]);
+                } else {
+                    console.error(`Size ${cartItem.size} not found in variant for product_id ${cartItem.product_id}`);
+                }
+                await variant.save();
+                console.log("Variant updated successfully:", variant);
+            } else {
+                console.error(`Variant not found for product_id ${cartItem.product_id}, color ${cartItem.color}, size ${cartItem.size}`);
+            }
+        }
+
+        // Lưu thông báo vào cơ sở dữ liệu
+        const title = 'Thông báo đơn hàng';
+        const message = `Đơn hàng của bạn đã đặt thành công! Mã đơn hàng của bạn là: Order ID ${newOrder._id}`;
+
+        await notificationCotroller.sendPersonalNotification(userId, title, message);
+
+        // Gửi thông báo realtime cho người dùng liên quan
+        const io = req.app.locals.io;
+        if (io) {
+            const user = await User.findById(userId);
+            if (user && user.socketId) {
+                const socketId = user.socketId;
+                console.log('Socket ID:', socketId); // Log socket ID để kiểm tra
+
+                io.to(socketId).emit('pushnotification', {
+                    userId,
+                    message: message,
+                    title: title
+                });
+
+                console.log(`Notification sent to user ${userId} with socket ID ${socketId}`);
+            } else {
+                console.error(`Socket ID not found for user ${userId}`);
+            }
+        }
+
+        // Gửi phản hồi sau khi tất cả các tác vụ hoàn tất
+        res.status(201).json({ message: "Đặt hàng thành công", order: newOrder });
+
     } catch (error) {
-      console.error("Error creating order:", error);
-      res
-        .status(500)
-        .json({ message: "Lỗi khi tạo đơn hàng", error: error.message });
+        console.error("Error creating order:", error);
+        res.status(500).json({ message: "Lỗi khi tạo đơn hàng", error: error.message });
     }
-  },
+},
+
+
+
 
   getOrdersByStatus: async (req, res) => {
     try {

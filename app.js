@@ -33,7 +33,25 @@ app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 
 // Cấu hình CORS để cho phép kết nối từ tất cả các nguồn
-app.use(cors({ origin: '*' }));
+
+const allowedOrigins = [
+  'http://localhost:3001', // Web app trên localhost
+  'http://localhost:19006', // React Native khi chạy trên trình duyệt (Expo)
+  'http://192.168.1.x:3000', // Địa chỉ IP cục bộ khi kết nối qua mạng LAN (thay x bằng đúng giá trị)
+];
+
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  methods: ['GET', 'POST', 'PUT', 'DELETE','PATCH'],
+  credentials: true,
+}));
+
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -138,10 +156,6 @@ app.post('/send', (req, res) => {
 app.locals.io = io;
 
 
-// Khởi động server
-server.listen(3000, () => {
-  console.log('Server is running on port 3000');
-});
 
 // Kết nối với cơ sở dữ liệu
 const database = require('./config/db');

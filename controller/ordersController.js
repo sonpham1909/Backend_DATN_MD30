@@ -217,6 +217,8 @@ const ordersController = {
     }
   },
 
+  //phía app
+
   createOrderByApp: async (req, res) => {
     console.log("Request reached /create_order_ByApp"); // Kiểm tra xem đã vào hàm hay chưa
     console.log("Request body:", req.body); // Log thông tin của request body
@@ -352,6 +354,7 @@ const ordersController = {
 
 
 
+
   getOrdersByStatus: async (req, res) => {
     try {
       const userId = req.user.id; // Lấy user_id từ xác thực của người dùng
@@ -464,6 +467,76 @@ const ordersController = {
         .json({ message: "Lỗi khi lấy sản phẩm đã mua", error: error.message });
     }
   },
+  cancelOrderByApp: async (req, res) => {
+    try {
+      const userId = req.user.id; // Lấy user_id từ xác thực của người dùng
+      const orderId = req.params.orderId; // Lấy orderId từ request params
+      const { cancelReason } = req.body; // Lấy lý do hủy từ request body
+
+      // Kiểm tra nếu cancelReason không tồn tại
+      if (!cancelReason && req.body.cancelReason === undefined) {
+        return res.status(400).json({ message: "Cancel reason is required for cancellation" });
+      }
+
+      // Tìm đơn hàng dựa trên user_id và orderId
+      const order = await Order.findOne({ _id: orderId, user_id: userId });
+
+      if (!order) {
+        return res.status(404).json({ message: "Order not found" });
+      }
+
+      // Nếu đơn hàng ở trạng thái "Đã xác nhận", chuyển sang "Đang chờ hủy"
+      if (order.status === "processing") {
+        order.status = "waiting_cancel";
+        order.cancelReason = cancelReason || ""; // Lưu lý do hủy nếu có
+        await order.save();
+        return res.status(200).json({ message: "Order cancellation request is pending approval" });
+      }
+      
+
+      // Nếu đơn hàng ở trạng thái "Chờ xác nhận", cho phép hủy trực tiếp
+      if (order.status === "pending") {
+        if (!cancelReason) {
+          return res.status(400).json({ message: "Cancel reason is required for cancellation" });
+        }
+        order.status = "canceled";
+        order.cancelReason = cancelReason; // Lưu lý do hủy
+        await order.save();
+        return res.status(200).json({ message: "Order has been canceled successfully" });
+      } else {
+        return res.status(400).json({ message: "Order cannot be canceled in the current status" });
+      }
+    } catch (error) {
+      console.error("Error while canceling order:", error);
+      res.status(500).json({ message: "Error while canceling order", error: error.message });
+    }
+  },
+  approveCancellation: async (req, res) => {
+    try {
+      const orderId = req.params.orderId; // Lấy orderId từ request params
+
+      // Tìm đơn hàng dựa trên orderId
+      const order = await Order.findOne({ _id: orderId });
+
+      if (!order) {
+        return res.status(404).json({ message: "Order not found" });
+      }
+
+      // Chỉ cho phép phê duyệt nếu trạng thái là "Đang chờ hủy"
+      if (order.status === "waiting_cancel") {
+        order.status = "canceled";
+        await order.save();
+        return res.status(200).json({ message: "Order has been canceled successfully" });
+      } else {
+        return res.status(400).json({ message: "Order cannot be canceled in the current status" });
+      }
+    } catch (error) {
+      console.error("Error while approving order cancellation:", error);
+      res.status(500).json({ message: "Error while approving order cancellation", error: error.message });
+    }
+  },
+
+
 };
 
 module.exports = ordersController;

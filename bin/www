@@ -7,6 +7,7 @@
 var app = require('../app');
 var debug = require('debug')('datn-backend:server');
 var http = require('http');
+var { Server } = require('socket.io'); // Import Socket.IO
 
 /**
  * Get port from environment and store in Express.
@@ -20,6 +21,31 @@ app.set('port', port);
  */
 
 var server = http.createServer(app);
+
+// Tích hợp Socket.IO với server
+var io = new Server(server, {
+  cors: {
+    origin: 'http://localhost:3001', // URL frontend
+    credentials: true,
+  },
+});
+
+// Lắng nghe các sự kiện Socket.IO
+io.on('connection', (socket) => {
+  console.log(`User connected: ${socket.id}`);
+
+  socket.on('sendMessage', (data) => {
+    console.log('Message received:', data);
+    io.emit('receiveMessage', data); // Phát sự kiện đến tất cả client
+  });
+
+  socket.on('disconnect', () => {
+    console.log(`User disconnected: ${socket.id}`);
+  });
+});
+
+// Lưu io để sử dụng trong các controller khác
+app.set('io', io);
 
 /**
  * Listen on provided port, on all network interfaces.

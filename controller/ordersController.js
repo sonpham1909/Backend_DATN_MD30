@@ -135,49 +135,53 @@ const ordersController = {
   },
 
   cancelOrder: async (req, res) => {
-    const { orderId, reason } = req.body; // Lấy thông tin orderId và lý do từ request
+    const { orderId, cancelReason } = req.body; // Lấy thông tin từ request body
+
+    // Kiểm tra xem có đủ thông tin không
+    if (!orderId || !cancelReason) {
+        return res.status(400).json({ message: "orderId and cancelReason are required" });
+    }
+
+    console.log("Canceling order with ID:", orderId); // Log ID đơn hàng
+    console.log("Cancel reason:", cancelReason); // Log lý do hủy
 
     try {
-      const order = await Order.findById(orderId);
+        const order = await Order.findById(orderId); // Tìm đơn hàng theo orderId
 
-      if (!order) {
-        return res.status(404).json({ message: "Order not found" });
-      }
+        if (!order) {
+            return res.status(404).json({ message: "Order not found" });
+        }
 
-      if (order.status === "canceled") {
-        return res
-          .status(400)
-          .json({ message: 'Order is already with status "canceled"' });
-      }
-      const orderItems = await Order_items.find({ order_id: orderId });
-      if (!orderItems) {
-        return res.status(404).json({ message: "Order items not found" });
-      }
+        if (order.status === "canceled") {
+            return res.status(400).json({ message: 'Order is already with status "canceled"' });
+        }
 
-      order.status = "canceled"; // Cập nhật trạng thái đơn hàng
-      order.cancelReason = reason || ""; // Lưu lý do hủy nếu có
-      await order.save();
+        // Cập nhật trạng thái và lý do hủy
+        order.status = "canceled";
+        order.cancelReason = cancelReason; // Lưu lý do hủy
+        await order.save(); // Lưu thay đổi vào cơ sở dữ liệu
 
-      await Promise.all(
-        orderItems.map(async (item) => {
-          await Variant.findOneAndUpdate(
-            {
-              product_id: item.product_id,
-              color: item.color,
-              "sizes.size": item.size,
-            },
-            { $inc: { "sizes.$.quantity": item.quantity } } // Giảm số lượng biến thể
-          );
-        })
-      );
+        // Cập nhật lại số lượng sản phẩm cho các mục đơn hàng liên quan
+        const orderItems = await Order_items.find({ order_id: orderId });
+        await Promise.all(
+            orderItems.map(async (item) => {
+                await Variant.findOneAndUpdate(
+                    {
+                        product_id: item.product_id,
+                        color: item.color,
+                        "sizes.size": item.size,
+                    },
+                    { $inc: { "sizes.$.quantity": item.quantity } } // Tăng số lượng cho biến thể
+                );
+            })
+        );
 
-      res.status(200).json({ message: "Order canceled successfully", order });
+        res.status(200).json({ message: "Order canceled successfully", order });
     } catch (error) {
-      res
-        .status(500)
-        .json({ message: "Error canceling order", error: error.message });
+        console.error("Error canceling order:", error);
+        res.status(500).json({ message: "Error canceling order", error: error.message });
     }
-  },
+},
   changeStatusOrder: async (req, res) => {
     const orderId = req.params.orderId;
     const { status } = req.body; // 'shipping', 'delivered', 'cancelled'

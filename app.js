@@ -25,7 +25,12 @@ var OrderRouter = require('./routes/order');
 var VariantRouter = require('./routes/variant');
 var OrderItemRouter = require('./routes/order_item');
 var CartRouter = require('./routes/cart');
+
 var SearchRouter  = require('./routes/search');
+
+
+var ReplyRouter = require('./routes/reply'); 
+var MessageRouter = require('./routes/message');
 
 var app = express();
 
@@ -75,10 +80,16 @@ app.use('/v1/orders', OrderRouter);
 app.use('/v1/variants', VariantRouter);
 app.use('/v1/orderItems', OrderItemRouter);
 app.use('/v1/Cart', CartRouter);
+
 app.use('/v1/respone', ResponeRouter);
 app.use('/v1/search',SearchRouter);
 
 // Tạo HTTP server từ ứng dụng Express
+
+app.use('/v1/message',MessageRouter);
+app.use('/v1/reply',ReplyRouter);
+app.use('/v1/respone', ResponeRouter);// Tạo HTTP server từ ứng dụng Express
+
 const server = http.createServer(app);
 
 // Khởi tạo một instance của Socket.IO với HTTP server

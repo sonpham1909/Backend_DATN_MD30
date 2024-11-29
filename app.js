@@ -25,6 +25,7 @@ var OrderRouter = require('./routes/order');
 var VariantRouter = require('./routes/variant');
 var OrderItemRouter = require('./routes/order_item');
 var CartRouter = require('./routes/cart');
+var SearchRouter  = require('./routes/search');
 
 var app = express();
 
@@ -75,6 +76,7 @@ app.use('/v1/variants', VariantRouter);
 app.use('/v1/orderItems', OrderItemRouter);
 app.use('/v1/Cart', CartRouter);
 app.use('/v1/respone', ResponeRouter);
+app.use('/v1/search',SearchRouter);
 
 // Tạo HTTP server từ ứng dụng Express
 const server = http.createServer(app);

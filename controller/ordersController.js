@@ -482,7 +482,7 @@ const ordersController = {
       }
 
       // Nếu đơn hàng ở trạng thái "Đã xác nhận", chuyển sang "Đang chờ hủy"
-      if (order.status === "processing") {
+      if (order.status === "ready_for_shipment") {
         order.status = "waiting_cancel";
         order.cancelReason = cancelReason || ""; // Lưu lý do hủy nếu có
         await order.save();

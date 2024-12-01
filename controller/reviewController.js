@@ -10,16 +10,22 @@ const ReviewController = {
   addReview: async (req, res) => {
     try {
       const userId = req.user.id; // Lấy user_id từ xác thực của người dùng
-      const { product_id, rating, comment, color, size, image_variant, img } = req.body;
+      const { product_id, rating, comment, color, size, image_variant } = req.body;
+
+
   
       // Kiểm tra nếu thông tin rating hoặc product_id không tồn tại
       if (!product_id || !rating) {
+        console.log("Thiếu thông tin cần thiết.");
+        
         return res.status(400).json({ message: "Thiếu thông tin cần thiết." });
       }
   
       // Kiểm tra xem người dùng đã đánh giá sản phẩm này chưa
       const existingReview = await Review.findOne({ user_id: userId, product_id });
       if (existingReview) {
+        console.log("Bạn đã đánh giá sản phẩm này.");
+        
         return res.status(400).json({ message: "Bạn đã đánh giá sản phẩm này." });
       }
   
@@ -32,7 +38,7 @@ const ReviewController = {
         color,
         size,
         image_variant,
-        img: img || [], // Lưu ảnh do người dùng tải lên (nếu có)
+        img: req.imageUrls || [], // Lưu ảnh do người dùng tải lên (nếu có)
       });
   
       // Lưu review vào cơ sở dữ liệu

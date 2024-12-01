@@ -12,4 +12,6 @@ router.get('/getHistoryUser', middlewareController.verifyToken, searchController
 
 router.delete('/deleteSearch/:id', middlewareController.verifyToken, searchController.deleteSearchTerm);
 
+router.delete('/deleteALlSearch', middlewareController.verifyToken, searchController.deleteAllSearchTerms);
+
 module.exports = router;

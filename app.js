@@ -95,9 +95,14 @@ const server = http.createServer(app);
 // Khởi tạo một instance của Socket.IO với HTTP server
 const io = new Server(server, {
   cors: {
-    origin: "*", // Cho phép tất cả các nguồn truy cập
-    methods: ["GET", "POST"],
+    origin: '*',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+    credentials: true,
   },
+});
+
+server.listen(3000, () => {
+  console.log('Server is listening on port 3000');
 });
 
 // Lắng nghe kết nối từ client

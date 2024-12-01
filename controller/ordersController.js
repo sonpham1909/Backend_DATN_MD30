@@ -203,6 +203,40 @@ const ordersController = {
 
       // Cập nhật trạng thái đơn hàng
       order.status = status;
+          // Lưu thông báo vào cơ sở dữ liệu
+          const title = 'Thông báo đơn hàng';
+          let message = `Đơn hàng của bạn đã đặt thành công! Mã đơn hàng của bạn là: Order ID ${orderId}`;
+          if (status === 'ready_for_shipment') {
+            message = `Đơn hàng của bạn đã được xác nhận đang chuẩn bị hàng! Mã đơn hàng của bạn là: Order ID ${orderId}`;
+          } else if (status === 'shipping') {
+            message = `Đơn hàng của bạn đã được gửi cho đơn vị và đang giao cho bạn! Mã đơn hàng của bạn là: Order ID ${orderId}`;
+          } else if (status === 'delivered') {
+            message = `Đơn hàng của bạn đã được giao thành công hãy đánh giá giúp shop nhé! Mã đơn hàng của bạn là: Order ID ${orderId}`;
+          }
+          
+  
+          await notificationCotroller.sendPersonalNotification(order.user_id, title, message);
+  
+          // Gửi thông báo realtime cho người dùng liên quan
+          const io = req.app.locals.io;
+          if (io) {
+              const user = await User.findById(order.user_id);
+              if (user && user.socketId) {
+                  const socketId = user.socketId;
+                  console.log('Socket ID:', socketId); // Log socket ID để kiểm tra
+  
+                  io.to(socketId).emit('pushnotification', {
+                      userId:order.user_id,
+                      message: message,
+                      title: title
+                  });
+  
+                  console.log(`Notification sent to user ${order.user_id} with socket ID ${socketId}`);
+              } else {
+                  console.error(`Socket ID not found for user ${order.user_id}`);
+              }
+          }
+  
 
       // Lưu thay đổi vào cơ sở dữ liệu
       await order.save();

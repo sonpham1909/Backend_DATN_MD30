@@ -20,6 +20,7 @@ var PaymentMethodRouter=require('./routes/payment_method');
 var FavoriteMethodRouter=require('./routes/favorite');
 var Sub_CategoryRouter=require('./routes/sub_categorys');
 var Product_sub_CategoryRouter=require('./routes/product_sub_categories');
+var payment_momo=require('./routes/payment_momo');
 
 var ProductRouter = require('./routes/product');
 var OrderRouter = require('./routes/order');
@@ -55,13 +56,13 @@ app.use('/v1/ProductsubCategorys',Product_sub_CategoryRouter);
 app.use('/v1/Review',ReviewRouter);
 app.use('/v1/favorite',FavoriteMethodRouter);
 app.use('/v1/products',ProductRouter);
-
+app.use('/v1/Payment',ProductRouter);
 app.use('/v1/shippingMethods', ShippingMethodRouter);
 app.use('/v1/orders', OrderRouter);
 app.use('/v1/variants', VariantRouter);
 app.use('/v1/orderItems', OrderItemRouter);
 app.use('/v1/Cart', CartRouter);
-
+app.use('/v1/Payment_Momo', payment_momo);
 
 
 

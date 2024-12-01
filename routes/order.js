@@ -3,27 +3,44 @@ const router = express.Router();
 const orderController = require("../controller/ordersController");
 const middlewareController = require("../controller/middlewareController");
 
-//get all order;
+//App
+router.post(
+  "/create_order_ByApp",
+  middlewareController.verifyToken,
+  orderController.createOrderByApp
+);
 
-router.post( "/create_order_ByApp",
-    middlewareController.verifyToken,
-    orderController.createOrderByApp
-  );
+router.get(
+  "/status/:status",
+  middlewareController.verifyToken,
+  orderController.getOrdersByStatus
+);
+router.get(
+  "/:orderId/byOrder",
+  middlewareController.verifyToken,
+  orderController.getOrderItemById
+);
+router.get(
+  "/purchased",
+  middlewareController.verifyToken,
+  orderController.getPurchasedProducts
+);
+router.post(
+  "/cancelByApp/:orderId",
+  middlewareController.verifyToken,
+  orderController.cancelOrderByApp
+);
 
-router.get("/", orderController.getAllOrders);
-router.get("/status/:status", middlewareController.verifyToken, orderController.getOrdersByStatus);
-router.get('/:orderId/byOrder', middlewareController.verifyToken, orderController.getOrderItemById);
-router.get('/purchased', middlewareController.verifyToken, orderController.getPurchasedProducts);
-router.post("/cancelByApp/:orderId", middlewareController.verifyToken, orderController.cancelOrderByApp);
+router.get(
+  "/:orderId/statusPayment",
+  middlewareController.verifyToken,
+  orderController.getStatusPayment
+);
 
-//create order
+//Web
 router.post("/create_order", orderController.createOrder);
-
-//cancle order
 router.patch("/cancel", orderController.cancelOrder);
-
 router.patch("/:orderId/change_status", orderController.changeStatusOrder);
-
-
+router.get("/", orderController.getAllOrders);
 
 module.exports = router;

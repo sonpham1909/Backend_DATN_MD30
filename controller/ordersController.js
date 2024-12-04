@@ -4,6 +4,7 @@ const Product = require("../models/Product");
 const Variant = require("../models/Variants");
 const Address = require("../models/Address");
 const Payment = require("../models/Payment_Momo");
+const PaymentMethod = require('../models/Payment_method');
 
 const ordersController = {
   getAllOrders: async (req, res) => {
@@ -249,20 +250,17 @@ const ordersController = {
 
   //phía app
   createOrderByApp: async (req, res) => {
-    console.log("Request reached /create_order_ByApp"); // Kiểm tra xem đã vào hàm hay chưa
-    console.log("Request body:", req.body); // Log thông tin của request body
-
-    const { address_id, shipping_method_id, payment_method_id, cartItems } =
-      req.body;
-    const userId = req.user ? req.user.id : null; // Lấy user ID từ thông tin xác thực
-
+    console.log("Request reached /create_order_ByApp");
+    console.log("Request body:", req.body);
+  
+    const { address_id, shipping_method_id, payment_method_id, cartItems } = req.body;
+    const userId = req.user ? req.user.id : null;
+  
     if (!userId) {
       console.error("Không thể xác thực người dùng. user_id:", userId);
-      return res
-        .status(400)
-        .json({ message: "Không thể xác thực người dùng." });
+      return res.status(400).json({ message: "Không thể xác thực người dùng." });
     }
-
+  
     if (
       !address_id ||
       !shipping_method_id ||
@@ -276,18 +274,16 @@ const ordersController = {
         payment_method_id,
         cartItemsLength: cartItems ? cartItems.length : 0,
       });
-      return res
-        .status(400)
-        .json({ message: "Thiếu thông tin cần thiết hoặc giỏ hàng trống." });
+      return res.status(400).json({ message: "Thiếu thông tin cần thiết hoặc giỏ hàng trống." });
     }
-
+  
     try {
       // Lấy chi tiết địa chỉ
       const address = await Address.findById(address_id);
       if (!address) {
         return res.status(404).json({ message: "Không tìm thấy địa chỉ" });
       }
-
+  
       // Tính tổng giá trị đơn hàng và tổng số lượng sản phẩm
       const total_amount = cartItems.reduce(
         (total, item) => total + item.price * item.quantity,
@@ -297,11 +293,17 @@ const ordersController = {
         (total, item) => total + item.quantity,
         0
       );
-
-      console.log("Total amount:", total_amount);
-      console.log("Total products:", total_products);
-
-      // Tạo đơn hàng mới với thông tin chi tiết địa chỉ
+  
+      // Kiểm tra phương thức thanh toán
+      const paymentMethod = await PaymentMethod.findById(payment_method_id);
+      if (!paymentMethod) {
+        return res.status(404).json({ message: "Không tìm thấy phương thức thanh toán" });
+      }
+  
+      // Xác định trạng thái thanh toán
+      const paymentStatus = paymentMethod.name === "MoMo" ? "pending" : "unpaid";
+  
+      // Tạo đơn hàng mới
       const newOrder = new Order({
         user_id: userId,
         recipientName: address.recipientName,
@@ -316,17 +318,15 @@ const ordersController = {
         payment_method_id,
         total_products,
         total_amount,
-        status: "pending",
+        status: "pending", // Trạng thái đơn hàng ban đầu
+        payment_status: paymentStatus,
       });
-
-      // Lưu đơn hàng vào cơ sở dữ liệu
+  
       await newOrder.save();
       console.log("Order created successfully:", newOrder);
-
+  
       // Tạo các mục đơn hàng và cập nhật số lượng biến thể sản phẩm
       for (const cartItem of cartItems) {
-        console.log("Processing cart item:", cartItem);
-
         const orderItem = new Order_items({
           order_id: newOrder._id,
           product_id: cartItem.product_id,
@@ -338,47 +338,31 @@ const ordersController = {
           image_variant: cartItem.image_variant,
         });
         await orderItem.save();
-        console.log("Order item saved:", orderItem);
-
-        // Cập nhật số lượng biến thể sản phẩm
+  
         const variant = await Variant.findOne({
           product_id: cartItem.product_id,
           color: cartItem.color,
           "sizes.size": cartItem.size,
         });
-
+  
         if (variant) {
           const sizeIndex = variant.sizes.findIndex(
             (s) => s.size === cartItem.size
           );
           if (sizeIndex > -1) {
             variant.sizes[sizeIndex].quantity -= cartItem.quantity;
-            console.log(
-              `Updated variant quantity for product_id ${cartItem.product_id}:`,
-              variant.sizes[sizeIndex]
-            );
-          } else {
-            console.error(
-              `Size ${cartItem.size} not found in variant for product_id ${cartItem.product_id}`
-            );
           }
           await variant.save();
-          console.log("Variant updated successfully:", variant);
-        } else {
-          console.error(
-            `Variant not found for product_id ${cartItem.product_id}, color ${cartItem.color}, size ${cartItem.size}`
-          );
         }
       }
-
+  
       res.status(201).json({ message: "Đặt hàng thành công", order: newOrder });
     } catch (error) {
       console.error("Error creating order:", error);
-      res
-        .status(500)
-        .json({ message: "Lỗi khi tạo đơn hàng", error: error.message });
+      res.status(500).json({ message: "Lỗi khi tạo đơn hàng", error: error.message });
     }
   },
+  
 
   getOrdersByStatus: async (req, res) => {
     try {
@@ -576,6 +560,21 @@ const ordersController = {
         message: "Failed to fetch order details",
         error: error.message,
       });
+    }
+  },
+
+  getOrdersByUser: async (req, res) => {
+    try {
+      const userId = req.user.id; // Lấy user_id từ xác thực của người dùng
+  
+      // Tìm tất cả đơn hàng của người dùng mà không cần join với các bảng khác
+      const orders = await Order.find({ user_id: userId });
+  
+      // Trả về danh sách đơn hàng
+      res.status(200).json(orders);
+    } catch (error) {
+      console.error("Error while fetching orders:", error);
+      res.status(500).json({ message: "Error while fetching orders", error: error.message });
     }
   }
   

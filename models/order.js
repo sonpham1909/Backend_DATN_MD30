@@ -44,7 +44,11 @@ const orderSchema = new mongoose.Schema(
       type: String,
       default: "pending",
     },
-
+    payment_status: {  // Trạng thái thanh toán
+      type: String,
+      default: "pending",  // Mặc định là chờ thanh toán
+      enum: ["pending", "paid", "failed", "cancelled","unpaid"],  // Các giá trị có thể có
+    },
     cancelReason: {
       type: String,
       default: "", // Trường lý do hủy

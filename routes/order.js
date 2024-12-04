@@ -37,6 +37,12 @@ router.get(
   orderController.getStatusPayment
 );
 
+router.get(
+  "/get_oder_byuser",
+  middlewareController.verifyToken,
+  orderController.getOrdersByUser
+);
+
 //Web
 router.post("/create_order", orderController.createOrder);
 router.patch("/cancel", orderController.cancelOrder);

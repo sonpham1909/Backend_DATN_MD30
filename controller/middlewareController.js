@@ -3,21 +3,27 @@ const User = require('../models/User');
 const Role = require('../models/Role');
 const middlewareController = {
     verifyToken: async (req, res, next) => {
-        const authHeader = req.headers.authorization; // Thay đổi ở đây
+        const authHeader = req.headers.authorization;
         if (authHeader) {
-            const token = authHeader.split(" ")[1]; // Lấy token từ header
-            jwt.verify(token, process.env.ACCESS_TOKEN_KEY, (err, user) => {
+            const token = authHeader.split(" ")[1];
+            jwt.verify(token, process.env.ACCESS_TOKEN_KEY, async (err, user) => {
                 if (err) {
                     return res.status(403).json("Token is not valid");
                 }
-                req.user = user; // Lưu thông tin người dùng vào req
+
+                // Tìm người dùng trong cơ sở dữ liệu
+                const foundUser = await User.findById(user.id);
+                if (!foundUser) {
+                    return res.status(404).json({ message: 'User not found' });
+                }
+
+                req.user = foundUser; // Lưu thông tin người dùng vào req
                 next();
             });
         } else {
-            res.status(401).json("you're not authenticated");
+            res.status(401).json("You're not authenticated");
         }
     },
-
     verifyAdminToken: async (req, res, next) => {
         middlewareController.verifyToken(req, res, () => {
             const roles = req.user.roles; // Lấy thông tin vai trò từ req.user

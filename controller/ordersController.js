@@ -311,85 +311,88 @@ const ordersController = {
   //phía app
   createOrderByApp: async (req, res) => {
     console.log("Request reached /create_order_ByApp"); // Kiểm tra xem đã vào hàm hay chưa
-    console.log("Request body:", req.body); // Log thông tin của request body
-
-    const { address_id, shipping_method_id, payment_method_id, cartItems } = req.body;
-    const userId = req.user ? req.user.id : null; // Lấy user ID từ thông tin xác thực
-
-    if (!userId) {
-      console.error("Không thể xác thực người dùng. user_id:", userId);
-      return res.status(400).json({ message: "Không thể xác thực người dùng." });
-    }
-
-    if (!address_id || !shipping_method_id || !payment_method_id || !cartItems || cartItems.length === 0) {
-      console.error("Thiếu thông tin cần thiết hoặc giỏ hàng trống.", {
-        address_id,
-        shipping_method_id,
-        payment_method_id,
-        cartItemsLength: cartItems ? cartItems.length : 0,
-      });
-      return res.status(400).json({ message: "Thiếu thông tin cần thiết hoặc giỏ hàng trống." });
-    }
-
-    try {
-      // Lấy chi tiết địa chỉ
-      const address = await Address.findById(address_id);
-      if (!address) {
-        return res.status(404).json({ message: "Không tìm thấy địa chỉ" });
+    coByApp: async (req, res) => {
+      console.log("Request reached /create_order_ByApp");
+      console.log("Request body:", req.body);
+  
+      const { address_id, shipping_method_id, payment_method_id, cartItems } = req.body;
+      const userId = req.user ? req.user.id : null;
+  
+      if (!userId) {
+          console.error("Không thể xác thực người dùng. user_id:", userId);
+          return res.status(400).json({ message: "Không thể xác thực người dùng." });
       }
-
-      // Tính tổng giá trị đơn hàng và tổng số lượng sản phẩm
-      const total_amount = cartItems.reduce((total, item) => total + item.price * item.quantity, 0);
-      const total_products = cartItems.reduce((total, item) => total + item.quantity, 0);
-
-      console.log("Total amount:", total_amount);
-      console.log("Total products:", total_products);
-
-      // Tạo đơn hàng mới với thông tin chi tiết địa chỉ
-      const newOrder = new Order({
-        user_id: userId,
-        recipientName: address.recipientName,
-        recipientPhone: address.recipientPhone,
-        addressDetail: {
-          street: address.addressDetail.street,
-          ward: address.addressDetail.ward,
-          district: address.addressDetail.district,
-          city: address.addressDetail.city,
-        },
-        shipping_method_id,
-        payment_method_id,
-        total_products,
-        total_amount,
-        status: "pending",
-      });
-
-      // Lưu đơn hàng vào cơ sở dữ liệu
-      await newOrder.save();
-      console.log("Order created successfully:", newOrder);
-
-      // Tạo các mục đơn hàng và cập nhật số lượng biến thể sản phẩm
-      for (const cartItem of cartItems) {
-        console.log("Processing cart item:", cartItem);
-
-        const orderItem = new Order_items({
-          order_id: newOrder._id,
-          product_id: cartItem.product_id,
-          size: cartItem.size,
-          color: cartItem.color,
-          quantity: cartItem.quantity,
-          price: cartItem.price,
-          total_amount: cartItem.price * cartItem.quantity,
-          image_variant: cartItem.image_variant,
-        });
-        await orderItem.save();
-        console.log("Order item saved:", orderItem);
-
-        // Cập nhật số lượng biến thể sản phẩm
-        const variant = await Variant.findOne({
-          product_id: cartItem.product_id,
-          color: cartItem.color,
-          "sizes.size": cartItem.size,
-        });
+  
+      if (!address_id || !shipping_method_id || !payment_method_id || !cartItems || cartItems.length === 0) {
+          console.error("Thiếu thông tin cần thiết hoặc giỏ hàng trống.", {
+              address_id,
+              shipping_method_id,
+              payment_method_id,
+              cartItemsLength: cartItems ? cartItems.length : 0,
+          });
+          return res.status(400).json({ message: "Thiếu thông tin cần thiết hoặc giỏ hàng trống." });
+      }
+  
+      try {
+          // Lấy chi tiết địa chỉ
+          const address = await Address.findById(address_id);
+          if (!address) {
+              return res.status(404).json({ message: "Không tìm thấy địa chỉ" });
+          }
+  
+          // Tính tổng giá trị đơn hàng và tổng số lượng sản phẩm
+          const total_amount = cartItems.reduce((total, item) => total + item.price * item.quantity, 0);
+          const total_products = cartItems.reduce((total, item) => total + item.quantity, 0);
+  
+          // Kiểm tra phương thức thanh toán
+          const paymentMethod = await PaymentMethod.findById(payment_method_id);
+          if (!paymentMethod) {
+              return res.status(404).json({ message: "Không tìm thấy phương thức thanh toán" });
+          }
+  
+          const paymentStatus = paymentMethod.name === "MoMo" ? "pending" : "unpaid";
+  
+          // Tạo đơn hàng mới
+          const newOrder = new Order({
+              user_id: userId,
+              recipientName: address.recipientName,
+              recipientPhone: address.recipientPhone,
+              addressDetail: {
+                  street: address.addressDetail.street,
+                  ward: address.addressDetail.ward,
+                  district: address.addressDetail.district,
+                  city: address.addressDetail.city,
+              },
+              shipping_method_id,
+              payment_method_id,
+              total_products,
+              total_amount,
+              status: "pending",
+              payment_status: paymentStatus,
+          });
+  
+          await newOrder.save();
+          console.log("Order created successfully:", newOrder);
+  
+          // Tạo các mục đơn hàng và cập nhật số lượng biến thể sản phẩm
+          for (const cartItem of cartItems) {
+              const orderItem = new Order_items({
+                  order_id: newOrder._id,
+                  product_id: cartItem.product_id,
+                  size: cartItem.size,
+                  color: cartItem.color,
+                  quantity: cartItem.quantity,
+                  price: cartItem.price,
+                  total_amount: cartItem.price * cartItem.quantity,
+                  image_variant: cartItem.image_variant,
+              });
+              await orderItem.save();
+  
+              const variant = await Variant.findOne({
+                  product_id: cartItem.product_id,
+                  color: cartItem.color,
+                  "sizes.size": cartItem.size,
+              });
 
         if (variant) {
           const sizeIndex = variant.sizes.findIndex((s) => s.size === cartItem.size);

@@ -4,13 +4,13 @@ const Reply = require('../models/Reply');
 // Tạo phản hồi mới
 const createReply = async (req, res) => {
   try {
-    const { message_id, user_id, content, img, status } = req.body;
-
+    const { message_id, user_id, content, status } = req.body;
+  
     const newReply = new Reply({
       message_id,
       user_id,
       content,
-      img: img || [],
+      img:req.imageUrls||[],// neu khong co anh thi de rong
       status,
     });
 

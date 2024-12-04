@@ -10,21 +10,18 @@ router.post(
 );
 
 // Lấy tất cả phương thức thanh toán
-router.get('/', middlewareController.verifyToken, PaymentMethodController.getAllPaymentMethods);
+router.get('/',  PaymentMethodController.getAllPaymentMethods);
 
 // Cập nhật phương thức thanh toán
 router.put(
     '/:id/update_payment_method',
-    middlewareController.verifyToken,
-    middlewareController.verifyAdminToken,
+
     PaymentMethodController.updatePaymentMethod // Hàm xử lý cập nhật phương thức thanh toán
 );
 
 // Xóa phương thức thanh toán
 router.delete(
     '/:id/delete_payment_method',
-    middlewareController.verifyToken,
-    middlewareController.verifyAdminToken,
     PaymentMethodController.deletePaymentMethod // Hàm xử lý xóa phương thức thanh toán
 );
 

@@ -13,8 +13,8 @@ const messageSchema = new mongoose.Schema(
       required: true,
     },
     img: {
-      type: String, // URL ảnh
-      required: false,
+      type: [String], // Đảm bảo img là mảng các chuỗi
+    default: [],   
     },
     status: {
       type: Boolean, // Trạng thái đã xem

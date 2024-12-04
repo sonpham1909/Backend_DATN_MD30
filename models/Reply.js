@@ -16,7 +16,10 @@ const replySchema = new mongoose.Schema(
     content: {
       type: String,
     },
-    img: [{ type: String }], // Thay đổi thành mảng để lưu trữ nhiều hình ảnh,
+    img: {
+      type: [String], // Đảm bảo img là mảng các chuỗi
+    default: [],   
+    },
     status: {
       type: Boolean, // Trạng thái đã xem
       default: false,

@@ -34,6 +34,8 @@ var SearchRouter  = require('./routes/search');
 
 var ReplyRouter = require('./routes/reply'); 
 var MessageRouter = require('./routes/message');
+var NotifiactionRouter = require('./routes/notification');
+var VerifiEmailRouter = require('./routes/verifiemail');
 
 var app = express();
 
@@ -98,6 +100,8 @@ app.use('/v1/Payment_Momo', payment_momo);
 app.use('/v1/message',MessageRouter);
 app.use('/v1/reply',ReplyRouter);
 app.use('/v1/respone', ResponeRouter);// Tạo HTTP server từ ứng dụng Express
+app.use('/v1/notification',NotifiactionRouter);
+app.use('/v1/verifi',VerifiEmailRouter);
 
 const server = http.createServer(app);
 
@@ -163,7 +167,7 @@ io.on('connection', (socket) => {
 
 // API để gửi thông báo tới tất cả các client
 app.post('/send', (req, res) => {
-  const message = req.body.message;
+  const {message, title, image, status, _id} = req.body;
   
   if (!message) {
     return res.status(400).send({
@@ -173,7 +177,7 @@ app.post('/send', (req, res) => {
 
   console.log('Sending push notification:', message);
 
-  io.emit('pushnotification', { message });  // Phát sự kiện với đúng tên
+  io.emit('pushnotification', { message, title,image,status, _id });  // Phát sự kiện với đúng tên
 
 
   res.status(200).send({

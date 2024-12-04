@@ -3,23 +3,30 @@ const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const Role = require('../models/Role');
 const UserRole = require('../models/UserRole');
+const VerificationCode = require('../models/VerificationCode');
 
 const authController = {
     //register
     registerUser: async (req, res) => {
         try {
-            console.log('Received request to register user:', req.body);  // Log thông tin request
-
-            // Tạo salt và hash cho mật khẩu
+            const { email, code } = req.body;
+    
+            // Kiểm tra mã xác thực
+            const verification = await VerificationCode.findOne({ email, code });
+            if (!verification || verification.expiry < Date.now()) {
+                return res.status(400).json({ message: 'Bạn chưa xác thực mã hoặc mã đã hết hạn!' });
+            }
+    
+            // Tạo salt và hash mật khẩu
             const salt = await bcrypt.genSalt(10);
             const hashed = await bcrypt.hash(req.body.password, salt);
-
-            // Tìm vai trò "user"
+    
+            // Tìm role "user"
             const userRole = await Role.findOne({ name: 'user' });
             if (!userRole) {
-                return res.status(400).json({ message: 'Role not found' });
+                return res.status(400).json({ message: 'Role không tìm thấy!' });
             }
-
+    
             // Tạo người dùng mới
             const newUser = new User({
                 username: req.body.username,
@@ -27,28 +34,27 @@ const authController = {
                 password: hashed,
                 phone_number: req.body.phone_number,
                 full_name: req.body.full_name,
-
             });
-
-            // Lưu người dùng vào cơ sở dữ liệu
+    
             const user = await newUser.save();
-
-            // Thêm bản ghi vào bảng user_roles
+    
+            // Liên kết user với role
             const userRoleEntry = new UserRole({
                 userId: user._id,
-                roleId: userRole._id
+                roleId: userRole._id,
             });
-
             await userRoleEntry.save();
-
-            // Trả về thông tin người dùng
+    
+            // Xóa mã xác thực sau khi hoàn thành
+            await VerificationCode.deleteOne({ email, code });
+    
             res.status(200).json(user);
         } catch (error) {
-            console.error('Error during registration:', error);  // Log lỗi chi tiết
-
+            console.error('Lỗi khi đăng ký:', error);
             res.status(500).json(error);
         }
-    },
+    }
+    ,
 
     generateAccessToken: async (user) => {
 

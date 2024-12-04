@@ -9,6 +9,12 @@ const Review = require("../models/Review");
 const Variant = require('../models/Variants');
 const { default: mongoose } = require('mongoose');
 
+
+function removeDiacritics(str) {
+  return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D');
+}
+
+
 const productController = {
   getProductByIdApp: async (req, res) => {
     try {
@@ -535,6 +541,48 @@ const productController = {
         .json({ message: "Lỗi khi tìm kiếm sản phẩm", error: error.message });
     }
   },
+  searchSimilarProducts: async (req, res) => {
+    try {
+      const { keyword } = req.query;
+
+      if (!keyword) {
+        return res.status(400).json({ message: "Keyword is required for search" });
+      }
+
+      // Bước 1: Chuẩn bị từ khóa để tìm kiếm không phân biệt hoa thường và sử dụng fuzzy search
+      const normalizedKeyword = removeDiacritics(keyword.toLowerCase());
+      const regex = new RegExp(`${normalizedKeyword.split(" ").join(".*")}`, "i");
+
+      // Bước 2: Tìm kiếm sản phẩm với từ khóa chỉ trong tên sản phẩm đã chuẩn hóa
+      const exactProducts = await Product.find({
+        normalized_name: { $regex: regex }
+      });
+
+      // Bước 3: Tìm kiếm các sản phẩm gần giống nếu không có sản phẩm chính xác
+      let similarProducts = [];
+      if (exactProducts.length === 0) {
+        console.log("No exact products found matching the keyword");
+        const fuzzyRegex = new RegExp(keyword.split(" ").map(removeDiacritics).join(".*"), "i");
+        similarProducts = await Product.find({
+          normalized_name: { $regex: fuzzyRegex }
+        }).limit(10); // Giới hạn số lượng sản phẩm gần giống trả về
+      } else {
+        // Nếu tìm thấy sản phẩm chính xác, tiếp tục tìm các sản phẩm gần giống nhưng không trùng với sản phẩm chính xác
+        const fuzzyRegex = new RegExp(keyword.split(" ").map(removeDiacritics).join(".*"), "i");
+        similarProducts = await Product.find({
+          normalized_name: { $regex: fuzzyRegex },
+          _id: { $nin: exactProducts.map((product) => product._id) },
+        }).limit(10);
+      }
+      const productsWithDetails = [...exactProducts, ...similarProducts].map((product) => product.toObject());
+
+      res.status(200).json(productsWithDetails);
+    } catch (error) {
+      console.error("Error during searchSimilarProducts:", error);
+      res.status(500).json({ message: "Server error", error: error.message });
+    }
+  },
+
 };
 
 module.exports = productController;

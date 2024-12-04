@@ -19,10 +19,10 @@ const userSchema = new mongoose.Schema({
     password: {
         type: String,
         required: true,
-        minlength:8,
-        
+        minlength: 8,
+
     },
-   
+
     phone_number: {
         type: String,
         required: true, // Nếu bạn muốn bắt buộc
@@ -42,11 +42,18 @@ const userSchema = new mongoose.Schema({
     refreshToken: {
         type: String
     },
-    
-    block:{
+
+    block: {
         type: Boolean,
-        default:false
-    }
+        default: false
+    },
+    isConnected: {
+        type: Boolean,
+        default: false,
+    },
+    socketId: {
+        type: String,
+    },
 
 
 

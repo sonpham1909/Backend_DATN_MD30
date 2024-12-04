@@ -3,8 +3,9 @@ const Order_items = require("../models/Order_items");
 const Product = require("../models/Product");
 const Variant = require("../models/Variants");
 const Address = require("../models/Address");
+const PaymentMethod = require("../models/Payment_method");
+
 const Payment = require("../models/Payment_Momo");
-const PaymentMethod = require('../models/Payment_method');
 
 const ordersController = {
   getAllOrders: async (req, res) => {
@@ -214,155 +215,125 @@ const ordersController = {
     }
   },
 
-  approveCancellation: async (req, res) => {
-    try {
-      const orderId = req.params.orderId; // Lấy orderId từ request params
-
-      // Tìm đơn hàng dựa trên orderId
-      const order = await Order.findOne({ _id: orderId });
-
-      if (!order) {
-        return res.status(404).json({ message: "Order not found" });
-      }
-
-      // Chỉ cho phép phê duyệt nếu trạng thái là "Đang chờ hủy"
-      if (order.status === "waiting_cancel") {
-        order.status = "canceled";
-        await order.save();
-        return res
-          .status(200)
-          .json({ message: "Order has been canceled successfully" });
-      } else {
-        return res
-          .status(400)
-          .json({ message: "Order cannot be canceled in the current status" });
-      }
-    } catch (error) {
-      console.error("Error while approving order cancellation:", error);
-      res
-        .status(500)
-        .json({
-          message: "Error while approving order cancellation",
-          error: error.message,
-        });
-    }
-  },
-
   //phía app
+
   createOrderByApp: async (req, res) => {
     console.log("Request reached /create_order_ByApp");
     console.log("Request body:", req.body);
-  
+
     const { address_id, shipping_method_id, payment_method_id, cartItems } = req.body;
     const userId = req.user ? req.user.id : null;
-  
+
     if (!userId) {
-      console.error("Không thể xác thực người dùng. user_id:", userId);
-      return res.status(400).json({ message: "Không thể xác thực người dùng." });
+        console.error("Không thể xác thực người dùng. user_id:", userId);
+        return res.status(400).json({ message: "Không thể xác thực người dùng." });
     }
-  
-    if (
-      !address_id ||
-      !shipping_method_id ||
-      !payment_method_id ||
-      !cartItems ||
-      cartItems.length === 0
-    ) {
-      console.error("Thiếu thông tin cần thiết hoặc giỏ hàng trống.", {
-        address_id,
-        shipping_method_id,
-        payment_method_id,
-        cartItemsLength: cartItems ? cartItems.length : 0,
-      });
-      return res.status(400).json({ message: "Thiếu thông tin cần thiết hoặc giỏ hàng trống." });
+
+    if (!address_id || !shipping_method_id || !payment_method_id || !cartItems || cartItems.length === 0) {
+        console.error("Thiếu thông tin cần thiết hoặc giỏ hàng trống.", {
+            address_id,
+            shipping_method_id,
+            payment_method_id,
+            cartItemsLength: cartItems ? cartItems.length : 0,
+        });
+        return res.status(400).json({ message: "Thiếu thông tin cần thiết hoặc giỏ hàng trống." });
     }
-  
+
     try {
-      // Lấy chi tiết địa chỉ
-      const address = await Address.findById(address_id);
-      if (!address) {
-        return res.status(404).json({ message: "Không tìm thấy địa chỉ" });
-      }
-  
-      // Tính tổng giá trị đơn hàng và tổng số lượng sản phẩm
-      const total_amount = cartItems.reduce(
-        (total, item) => total + item.price * item.quantity,
-        0
-      );
-      const total_products = cartItems.reduce(
-        (total, item) => total + item.quantity,
-        0
-      );
-  
-      // Kiểm tra phương thức thanh toán
-      const paymentMethod = await PaymentMethod.findById(payment_method_id);
-      if (!paymentMethod) {
-        return res.status(404).json({ message: "Không tìm thấy phương thức thanh toán" });
-      }
-  
-      // Xác định trạng thái thanh toán
-      const paymentStatus = paymentMethod.name === "MoMo" ? "pending" : "unpaid";
-  
-      // Tạo đơn hàng mới
-      const newOrder = new Order({
-        user_id: userId,
-        recipientName: address.recipientName,
-        recipientPhone: address.recipientPhone,
-        addressDetail: {
-          street: address.addressDetail.street,
-          ward: address.addressDetail.ward,
-          district: address.addressDetail.district,
-          city: address.addressDetail.city,
-        },
-        shipping_method_id,
-        payment_method_id,
-        total_products,
-        total_amount,
-        status: "pending", // Trạng thái đơn hàng ban đầu
-        payment_status: paymentStatus,
-      });
-  
-      await newOrder.save();
-      console.log("Order created successfully:", newOrder);
-  
-      // Tạo các mục đơn hàng và cập nhật số lượng biến thể sản phẩm
-      for (const cartItem of cartItems) {
-        const orderItem = new Order_items({
-          order_id: newOrder._id,
-          product_id: cartItem.product_id,
-          size: cartItem.size,
-          color: cartItem.color,
-          quantity: cartItem.quantity,
-          price: cartItem.price,
-          total_amount: cartItem.price * cartItem.quantity,
-          image_variant: cartItem.image_variant,
-        });
-        await orderItem.save();
-  
-        const variant = await Variant.findOne({
-          product_id: cartItem.product_id,
-          color: cartItem.color,
-          "sizes.size": cartItem.size,
-        });
-  
-        if (variant) {
-          const sizeIndex = variant.sizes.findIndex(
-            (s) => s.size === cartItem.size
-          );
-          if (sizeIndex > -1) {
-            variant.sizes[sizeIndex].quantity -= cartItem.quantity;
-          }
-          await variant.save();
+        // Lấy chi tiết địa chỉ
+        const address = await Address.findById(address_id);
+        if (!address) {
+            return res.status(404).json({ message: "Không tìm thấy địa chỉ" });
         }
-      }
-  
-      res.status(201).json({ message: "Đặt hàng thành công", order: newOrder });
+
+        // Tính tổng giá trị đơn hàng và tổng số lượng sản phẩm
+        const total_amount = cartItems.reduce((total, item) => total + item.price * item.quantity, 0);
+        const total_products = cartItems.reduce((total, item) => total + item.quantity, 0);
+
+        // Kiểm tra phương thức thanh toán
+        const paymentMethod = await PaymentMethod.findById(payment_method_id);
+        if (!paymentMethod) {
+            return res.status(404).json({ message: "Không tìm thấy phương thức thanh toán" });
+        }
+
+        const paymentStatus = paymentMethod.name === "MoMo" ? "pending" : "unpaid";
+
+        // Tạo đơn hàng mới
+        const newOrder = new Order({
+            user_id: userId,
+            recipientName: address.recipientName,
+            recipientPhone: address.recipientPhone,
+            addressDetail: {
+                street: address.addressDetail.street,
+                ward: address.addressDetail.ward,
+                district: address.addressDetail.district,
+                city: address.addressDetail.city,
+            },
+            shipping_method_id,
+            payment_method_id,
+            total_products,
+            total_amount,
+            status: "pending",
+            payment_status: paymentStatus,
+        });
+
+        await newOrder.save();
+        console.log("Order created successfully:", newOrder);
+
+        // Tạo các mục đơn hàng và cập nhật số lượng biến thể sản phẩm
+        for (const cartItem of cartItems) {
+            const orderItem = new Order_items({
+                order_id: newOrder._id,
+                product_id: cartItem.product_id,
+                size: cartItem.size,
+                color: cartItem.color,
+                quantity: cartItem.quantity,
+                price: cartItem.price,
+                total_amount: cartItem.price * cartItem.quantity,
+                image_variant: cartItem.image_variant,
+            });
+            await orderItem.save();
+
+            const variant = await Variant.findOne({
+                product_id: cartItem.product_id,
+                color: cartItem.color,
+                "sizes.size": cartItem.size,
+            });
+
+            if (variant) {
+                const sizeIndex = variant.sizes.findIndex((s) => s.size === cartItem.size);
+                if (sizeIndex > -1) {
+                    variant.sizes[sizeIndex].quantity -= cartItem.quantity;
+                }
+                await variant.save();
+            }
+        }
+
+        // Gửi thông báo realtime
+        const io = req.app.locals.io;
+        const title = 'Thông báo đơn hàng';
+        const message = `Đơn hàng của bạn đã đặt thành công! Mã đơn hàng của bạn là: Order ID ${newOrder._id}`;
+        await notificationCotroller.sendPersonalNotification(userId, title, message);
+
+        if (io) {
+            const user = await User.findById(userId);
+            if (user && user.socketId) {
+                io.to(user.socketId).emit('pushnotification', {
+                    userId,
+                    message,
+                    title,
+                });
+            }
+        }
+
+        res.status(201).json({ message: "Đặt hàng thành công", order: newOrder });
     } catch (error) {
-      console.error("Error creating order:", error);
-      res.status(500).json({ message: "Lỗi khi tạo đơn hàng", error: error.message });
+        console.error("Error creating order:", error);
+        res.status(500).json({ message: "Lỗi khi tạo đơn hàng", error: error.message });
     }
-  },
-  
+},
+
+
 
   getOrdersByStatus: async (req, res) => {
     try {
@@ -424,7 +395,6 @@ const ordersController = {
         .json({ message: "Error while fetching order", error: error.message });
     }
   },
-
   getPurchasedProducts: async (req, res) => {
     try {
       const userId = req.user.id; // Lấy user_id từ xác thực của người dùng
@@ -478,6 +448,21 @@ const ordersController = {
     }
   },
 
+  
+  getOrdersByUser: async (req, res) => {
+    try {
+      const userId = req.user.id; // Lấy user_id từ xác thực của người dùng
+  
+      // Tìm tất cả đơn hàng của người dùng mà không cần join với các bảng khác
+      const orders = await Order.find({ user_id: userId });
+  
+      // Trả về danh sách đơn hàng
+      res.status(200).json(orders);
+    } catch (error) {
+      console.error("Error while fetching orders:", error);
+      res.status(500).json({ message: "Error while fetching orders", error: error.message });
+    }
+  },  
   cancelOrderByApp: async (req, res) => {
     try {
       const userId = req.user.id; // Lấy user_id từ xác thực của người dùng
@@ -486,9 +471,7 @@ const ordersController = {
 
       // Kiểm tra nếu cancelReason không tồn tại
       if (!cancelReason && req.body.cancelReason === undefined) {
-        return res
-          .status(400)
-          .json({ message: "Cancel reason is required for cancellation" });
+        return res.status(400).json({ message: "Cancel reason is required for cancellation" });
       }
 
       // Tìm đơn hàng dựa trên user_id và orderId
@@ -503,36 +486,52 @@ const ordersController = {
         order.status = "waiting_cancel";
         order.cancelReason = cancelReason || ""; // Lưu lý do hủy nếu có
         await order.save();
-        return res
-          .status(200)
-          .json({ message: "Order cancellation request is pending approval" });
+        return res.status(200).json({ message: "Order cancellation request is pending approval" });
       }
+      
 
       // Nếu đơn hàng ở trạng thái "Chờ xác nhận", cho phép hủy trực tiếp
       if (order.status === "pending") {
         if (!cancelReason) {
-          return res
-            .status(400)
-            .json({ message: "Cancel reason is required for cancellation" });
+          return res.status(400).json({ message: "Cancel reason is required for cancellation" });
         }
         order.status = "canceled";
         order.cancelReason = cancelReason; // Lưu lý do hủy
         await order.save();
-        return res
-          .status(200)
-          .json({ message: "Order has been canceled successfully" });
+        return res.status(200).json({ message: "Order has been canceled successfully" });
       } else {
-        return res
-          .status(400)
-          .json({ message: "Order cannot be canceled in the current status" });
+        return res.status(400).json({ message: "Order cannot be canceled in the current status" });
       }
     } catch (error) {
       console.error("Error while canceling order:", error);
-      res
-        .status(500)
-        .json({ message: "Error while canceling order", error: error.message });
+      res.status(500).json({ message: "Error while canceling order", error: error.message });
     }
   },
+  approveCancellation: async (req, res) => {
+    try {
+      const orderId = req.params.orderId; // Lấy orderId từ request params
+
+      // Tìm đơn hàng dựa trên orderId
+      const order = await Order.findOne({ _id: orderId });
+
+      if (!order) {
+        return res.status(404).json({ message: "Order not found" });
+      }
+
+      // Chỉ cho phép phê duyệt nếu trạng thái là "Đang chờ hủy"
+      if (order.status === "waiting_cancel") {
+        order.status = "canceled";
+        await order.save();
+        return res.status(200).json({ message: "Order has been canceled successfully" });
+      } else {
+        return res.status(400).json({ message: "Order cannot be canceled in the current status" });
+      }
+    } catch (error) {
+      console.error("Error while approving order cancellation:", error);
+      res.status(500).json({ message: "Error while approving order cancellation", error: error.message });
+    }
+  },
+
 
   getStatusPayment: async (req, res) => {
     try {
@@ -561,23 +560,10 @@ const ordersController = {
         error: error.message,
       });
     }
-  },
-
-  getOrdersByUser: async (req, res) => {
-    try {
-      const userId = req.user.id; // Lấy user_id từ xác thực của người dùng
-  
-      // Tìm tất cả đơn hàng của người dùng mà không cần join với các bảng khác
-      const orders = await Order.find({ user_id: userId });
-  
-      // Trả về danh sách đơn hàng
-      res.status(200).json(orders);
-    } catch (error) {
-      console.error("Error while fetching orders:", error);
-      res.status(500).json({ message: "Error while fetching orders", error: error.message });
-    }
   }
   
+
+
 };
 
 module.exports = ordersController;

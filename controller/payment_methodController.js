@@ -7,7 +7,7 @@ const PaymentMethodController = {
             const newPaymentMethod = new PaymentMethod({
                 name: req.body.name,
                 description: req.body.description,
-               
+                image: req.body.image || '', // Thêm trường ảnh vào
             });
             const savedPaymentMethod = await newPaymentMethod.save();
             res.status(201).json(savedPaymentMethod);
@@ -30,7 +30,7 @@ const PaymentMethodController = {
 
     // Cập nhật phương thức thanh toán
     updatePaymentMethod: async (req, res) => {
-        const paymentMethodId = req.params.id; 
+        const paymentMethodId = req.params.id;
         const updatedData = {};
 
         try {
@@ -43,6 +43,7 @@ const PaymentMethodController = {
             updatedData.name = req.body.name || paymentMethod.name;
             updatedData.description = req.body.description || paymentMethod.description;
             updatedData.is_active = req.body.is_active !== undefined ? req.body.is_active : paymentMethod.is_active;
+            updatedData.image = req.body.image || paymentMethod.image; // Cập nhật trường ảnh nếu có
 
             // Cập nhật phương thức thanh toán
             Object.assign(paymentMethod, updatedData);
@@ -75,7 +76,7 @@ const PaymentMethodController = {
     searchPaymentMethod: async (req, res) => {
         try {
             const { keyword } = req.query;
-            const regex = new RegExp(keyword, 'i'); 
+            const regex = new RegExp(keyword, 'i');
             const paymentMethods = await PaymentMethod.find({ $or: [{ name: regex }, { description: regex }] });
             res.status(200).json(paymentMethods);
         } catch (error) {

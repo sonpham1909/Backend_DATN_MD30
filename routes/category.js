@@ -8,8 +8,7 @@ var router = express.Router();
 // Tạo danh mục
 router.post(
     "/create_category",
-    middlewareController.verifyToken,
-    middlewareController.verifyAdminToken,
+
     uploadphoto.array('imgcategory', 1), // Middleware để tải lên hình ảnh
     resizeAndUploadImage, // Middleware để xử lý và lưu trữ hình ảnh
     CategoryController.create_category // Hàm xử lý tạo danh mục
@@ -21,8 +20,7 @@ router.get('/', middlewareController.verifyToken, CategoryController.getAllcateg
 // Cập nhật danh mục
 router.put(
     '/:id/update_category',
-    middlewareController.verifyToken,
-    middlewareController.verifyAdminToken,
+  
     uploadphoto.array('imgcategory', 1), // Middleware để tải lên hình ảnh khi cập nhật
     resizeAndUploadImage, // Middleware để xử lý và lưu trữ hình ảnh
     CategoryController.updateCategory // Hàm xử lý cập nhật danh mục
@@ -31,8 +29,6 @@ router.put(
 // Xóa danh mục
 router.delete(
     '/:id/delete_category',
-    middlewareController.verifyToken,
-    middlewareController.verifyAdminToken,
     CategoryController.deleteCategory // Hàm xử lý xóa danh mục
 );
 

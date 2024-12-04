@@ -6,8 +6,6 @@ const router = express.Router();
 // Tạo danh mục con cho sản phẩm
 router.post(
     "/create_product_sub_category",
-    middlewareController.verifyToken,
-    middlewareController.verifyAdminToken,
     ProductSubCategoryController.createProductSubCategory // Hàm xử lý tạo danh mục con sản phẩm
 );
 
@@ -17,16 +15,12 @@ router.get('/', middlewareController.verifyToken, ProductSubCategoryController.g
 // Cập nhật danh mục con sản phẩm
 router.put(
     '/:id/update_product_sub_category',
-    middlewareController.verifyToken,
-    middlewareController.verifyAdminToken,
     ProductSubCategoryController.updateProductSubCategory // Hàm xử lý cập nhật danh mục con sản phẩm
 );
 
 // Xóa danh mục con sản phẩm
 router.delete(
     '/:id/delete_product_sub_category',
-    middlewareController.verifyToken,
-    middlewareController.verifyAdminToken,
     ProductSubCategoryController.deleteProductSubCategory // Hàm xử lý xóa danh mục con sản phẩm
 );
 

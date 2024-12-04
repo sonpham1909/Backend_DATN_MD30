@@ -10,23 +10,29 @@ const CartItemController = {
             // Tìm giỏ hàng của người dùng
             const cart = await Cart.findOne({ user_id: userId, status: 'isActive' });
             if (!cart) {
-                return res.status(404).json({ message: 'Cart not found', items: [] });
+                // Nếu giỏ hàng không tồn tại, trả về mảng rỗng
+                return res.status(200).json([]);
             }
-
+    
             // Tìm các mục trong giỏ hàng
             const cartItems = await Cart_item.find({ cart_id: cart._id }).populate('product_id', 'name');
-
+            if (!cartItems || cartItems.length === 0) {
+                // Nếu không có mục nào trong giỏ hàng, trả về mảng rỗng
+                return res.status(200).json([]);
+            }
+    
             const cartWithName = cartItems.map(item => ({
                 ...item._doc,
-                name: item.product_id?.name
+                name: item.product_id?.name,
             }));
-
+    
             return res.status(200).json(cartWithName);
         } catch (error) {
             console.error('Error fetching cart items:', error);
             return res.status(500).json({ message: 'Internal server error' });
         }
     },
+    
 
     addToCart: async (req, res) => {
         const userId = req.user.id; // Lấy userId từ req.user

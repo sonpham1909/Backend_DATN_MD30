@@ -135,13 +135,33 @@ const userController = {
     updateUser: async (req, res) => {
         const userId = req.params.id; // Lấy ID người dùng từ params
         const updatedData = req.body; // Lấy dữ liệu cập nhật từ body
-
+        const { oldPassword, password: newPassword } = updatedData; // Lấy mật khẩu cũ và mật khẩu mới từ dữ liệu gửi lên
+    
         try {
-
-            if (updatedData.password) {
-                const salt = await bcrypt.genSalt(10); // Tạo salt
-                updatedData.password = await bcrypt.hash(updatedData.password, salt); // Hash mật khẩu
+            // Lấy thông tin người dùng hiện tại
+            const user = await User.findById(userId);
+    
+            if (!user) {
+                return res.status(404).json({ message: 'User not found' });
             }
+    
+            // Kiểm tra nếu có mật khẩu mới và yêu cầu mật khẩu cũ
+            if (newPassword) {
+                if (!oldPassword) {
+                    return res.status(400).json({ message: 'Old password is required' });
+                }
+    
+                // So sánh mật khẩu cũ với mật khẩu trong cơ sở dữ liệu
+                const isMatch = await bcrypt.compare(oldPassword, user.password);
+                if (!isMatch) {
+                    return res.status(400).json({ message: 'Incorrect old password' });
+                }
+    
+                // Băm mật khẩu mới
+                const salt = await bcrypt.genSalt(10);
+                updatedData.password = await bcrypt.hash(newPassword, salt); // Cập nhật mật khẩu mới đã băm
+            }
+    
             // Kiểm tra xem có cập nhật username không
             if (updatedData.username) {
                 const existingUser = await User.findOne({ username: updatedData.username });

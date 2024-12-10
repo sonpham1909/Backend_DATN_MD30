@@ -12,16 +12,16 @@ var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
 var authRouter = require('./routes/auth');
 
-var CategoryRouter=require('./routes/category');
-var AddressRouter=require('./routes/address');
-var ShippingMethodRouter=require('./routes/shipping_method');
-var ResponeRouter=require('./routes/respone_review');
-var ReviewRouter=require('./routes/review');
-var PaymentMethodRouter=require('./routes/payment_method');
-var FavoriteMethodRouter=require('./routes/favorite');
-var Sub_CategoryRouter=require('./routes/sub_categorys');
-var Product_sub_CategoryRouter=require('./routes/product_sub_categories');
-var payment_momo=require('./routes/payment_momo');
+var CategoryRouter = require('./routes/category');
+var AddressRouter = require('./routes/address');
+var ShippingMethodRouter = require('./routes/shipping_method');
+var ResponeRouter = require('./routes/respone_review');
+var ReviewRouter = require('./routes/review');
+var PaymentMethodRouter = require('./routes/payment_method');
+var FavoriteMethodRouter = require('./routes/favorite');
+var Sub_CategoryRouter = require('./routes/sub_categorys');
+var Product_sub_CategoryRouter = require('./routes/product_sub_categories');
+var payment_momo = require('./routes/payment_momo');
 
 var ProductRouter = require('./routes/product');
 var OrderRouter = require('./routes/order');
@@ -29,10 +29,10 @@ var VariantRouter = require('./routes/variant');
 var OrderItemRouter = require('./routes/order_item');
 var CartRouter = require('./routes/cart');
 
-var SearchRouter  = require('./routes/search');
+var SearchRouter = require('./routes/search');
 
 
-var ReplyRouter = require('./routes/reply'); 
+var ReplyRouter = require('./routes/reply');
 var MessageRouter = require('./routes/message');
 var NotifiactionRouter = require('./routes/notification');
 var VerifiEmailRouter = require('./routes/verifiemail');
@@ -59,7 +59,7 @@ app.use(cors({
       callback(new Error('Not allowed by CORS'));
     }
   },
-  methods: ['GET', 'POST', 'PUT', 'DELETE','PATCH'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
   credentials: true,
 }));
 
@@ -72,16 +72,16 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/', indexRouter);
 app.use('/v1/users', usersRouter);
 
-app.use('/v1/auth',authRouter);
-app.use('/v1/categorys',CategoryRouter);
-app.use('/v1/address',AddressRouter);
-app.use('/v1/PaymentMethod',PaymentMethodRouter);
-app.use('/v1/subcategorys',Sub_CategoryRouter);
-app.use('/v1/ProductsubCategorys',Product_sub_CategoryRouter);
-app.use('/v1/Review',ReviewRouter);
-app.use('/v1/favorite',FavoriteMethodRouter);
-app.use('/v1/products',ProductRouter);
-app.use('/v1/Payment',ProductRouter);
+app.use('/v1/auth', authRouter);
+app.use('/v1/categorys', CategoryRouter);
+app.use('/v1/address', AddressRouter);
+app.use('/v1/PaymentMethod', PaymentMethodRouter);
+app.use('/v1/subcategorys', Sub_CategoryRouter);
+app.use('/v1/ProductsubCategorys', Product_sub_CategoryRouter);
+app.use('/v1/Review', ReviewRouter);
+app.use('/v1/favorite', FavoriteMethodRouter);
+app.use('/v1/products', ProductRouter);
+app.use('/v1/Payment', ProductRouter);
 
 app.use('/v1/shippingMethods', ShippingMethodRouter);
 app.use('/v1/orders', OrderRouter);
@@ -90,18 +90,18 @@ app.use('/v1/orderItems', OrderItemRouter);
 app.use('/v1/Cart', CartRouter);
 
 
-app.use('/v1/search',SearchRouter);
+app.use('/v1/search', SearchRouter);
 
 // Tạo HTTP server từ ứng dụng Express
 
 app.use('/v1/Payment_Momo', payment_momo);
 
 
-app.use('/v1/message',MessageRouter);
-app.use('/v1/reply',ReplyRouter);
+app.use('/v1/message', MessageRouter);
+app.use('/v1/reply', ReplyRouter);
 app.use('/v1/respone', ResponeRouter);// Tạo HTTP server từ ứng dụng Express
-app.use('/v1/notification',NotifiactionRouter);
-app.use('/v1/verifi',VerifiEmailRouter);
+app.use('/v1/notification', NotifiactionRouter);
+app.use('/v1/verifi', VerifiEmailRouter);
 
 const server = http.createServer(app);
 
@@ -122,6 +122,9 @@ server.listen(3000, () => {
 
 const User = require('./models/User'); // Import model User
 
+let adminSockets = [];
+let userSockets = [];
+
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
 
@@ -139,6 +142,17 @@ io.on('connection', (socket) => {
       console.error('Error updating user socket ID:', error);
     }
   });
+
+  socket.on('registerAdmin', () => {
+    adminSockets.push(socket);
+    console.log('Admin connected: ' + socket.id);
+  });
+
+  socket.on('sendMessageToAdmins', (message) => {
+    adminSockets.forEach(adminSocket => {
+        adminSocket.emit('receiveMessageFromUser ', message);
+    });
+});
 
   // Khi client ngắt kết nối
   socket.on('disconnect', async () => {
@@ -167,8 +181,8 @@ io.on('connection', (socket) => {
 
 // API để gửi thông báo tới tất cả các client
 app.post('/send', (req, res) => {
-  const {message, title, image, status, _id} = req.body;
-  
+  const { message} = req.body;
+
   if (!message) {
     return res.status(400).send({
       error: 'Message content is required'
@@ -177,7 +191,7 @@ app.post('/send', (req, res) => {
 
   console.log('Sending push notification:', message);
 
-  io.emit('pushnotification', { message, title,image,status, _id });  // Phát sự kiện với đúng tên
+  io.emit('sendMessageToAdmins', {message});  // Phát sự kiện với đúng tên
 
 
   res.status(200).send({

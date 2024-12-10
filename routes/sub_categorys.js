@@ -31,5 +31,5 @@ router.delete(
 
     SubCategoryController.deleteSubCategory // Hàm xử lý xóa sub_category
 );
-
+router.get('/search',  SubCategoryController.searchSubCategories);
 module.exports = router;

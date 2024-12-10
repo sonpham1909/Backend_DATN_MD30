@@ -70,6 +70,20 @@ const order_items_controller = {
     },
     getTopSellingProducts: async (req, res) => {
         try {
+            const { startDate, endDate } = req.query;
+    
+            // Chuyển đổi ngày từ chuỗi sang định dạng Date
+            const start = new Date(startDate);
+            const end = new Date(endDate);
+    
+         
+            start.setDate(start.getDate() );
+    
+            // Kiểm tra tính hợp lệ của ngày
+            if (end < start) {
+                return res.status(200).json([]);
+            }
+    
             const topSellingProducts = await Order_items.aggregate([
                 {
                     $lookup: {
@@ -80,18 +94,25 @@ const order_items_controller = {
                     }
                 },
                 { $unwind: "$order_info" },
-                { $match: { "order_info.status": "delivered" } }, // Lọc chỉ các đơn hàng đã giao
+                {
+                    $match: {
+                        "order_info.status": "delivered",
+                        "order_info.updatedAt": { 
+                            $gte: start, 
+                            $lt: new Date(end.getTime() + 24 * 60 * 60 * 1000) 
+                        }
+                    }
+                },
                 {
                     $group: {
                         _id: "$product_id",
                         totalQuantity: { $sum: "$quantity" },
-                        totalAmount: {$sum: '$total_amount'}
-                    } 
+                        totalAmount: { $sum: "$total_amount" }
+                    }
                 },
-                { $sort: { totalQuantity: -1 } } // Sắp xếp theo số lượng giảm dần
-                // Không thêm $limit ở đây
+                { $sort: { totalQuantity: -1 } }
             ]);
-
+    
             res.status(200).json(topSellingProducts);
         } catch (error) {
             console.error("Error fetching top selling products:", error);

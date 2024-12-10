@@ -28,8 +28,15 @@ var OrderRouter = require('./routes/order');
 var VariantRouter = require('./routes/variant');
 var OrderItemRouter = require('./routes/order_item');
 var CartRouter = require('./routes/cart');
+
+var SearchRouter  = require('./routes/search');
+
+
 var ReplyRouter = require('./routes/reply'); 
 var MessageRouter = require('./routes/message');
+var NotifiactionRouter = require('./routes/notification');
+var VerifiEmailRouter = require('./routes/verifiemail');
+
 var app = express();
 
 // View engine setup
@@ -82,19 +89,33 @@ app.use('/v1/variants', VariantRouter);
 app.use('/v1/orderItems', OrderItemRouter);
 app.use('/v1/Cart', CartRouter);
 
+
+app.use('/v1/search',SearchRouter);
+
+// Tạo HTTP server từ ứng dụng Express
+
 app.use('/v1/Payment_Momo', payment_momo);
+
 
 app.use('/v1/message',MessageRouter);
 app.use('/v1/reply',ReplyRouter);
 app.use('/v1/respone', ResponeRouter);// Tạo HTTP server từ ứng dụng Express
+app.use('/v1/notification',NotifiactionRouter);
+app.use('/v1/verifi',VerifiEmailRouter);
+
 const server = http.createServer(app);
 
 // Khởi tạo một instance của Socket.IO với HTTP server
 const io = new Server(server, {
   cors: {
-    origin: "*", // Cho phép tất cả các nguồn truy cập
-    methods: ["GET", "POST"],
+    origin: '*',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+    credentials: true,
   },
+});
+
+server.listen(3000, () => {
+  console.log('Server is listening on port 3000');
 });
 
 // Lắng nghe kết nối từ client
@@ -146,7 +167,7 @@ io.on('connection', (socket) => {
 
 // API để gửi thông báo tới tất cả các client
 app.post('/send', (req, res) => {
-  const message = req.body.message;
+  const {message, title, image, status, _id} = req.body;
   
   if (!message) {
     return res.status(400).send({
@@ -156,7 +177,7 @@ app.post('/send', (req, res) => {
 
   console.log('Sending push notification:', message);
 
-  io.emit('pushnotification', { message });  // Phát sự kiện với đúng tên
+  io.emit('pushnotification', { message, title,image,status, _id });  // Phát sự kiện với đúng tên
 
 
   res.status(200).send({

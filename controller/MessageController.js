@@ -21,8 +21,7 @@ const createMessage = async (req, res) => {
     const savedMessage = await newMessage.save();
 
     // Phát sự kiện qua Socket.IO
-    const io = req.app.get('io'); // Lấy đối tượng io từ app
-    io.emit('newMessage', savedMessage); // Phát sự kiện "newMessage" tới tất cả client
+    
 
     res.status(201).json(savedMessage);
   } catch (error) {
@@ -74,13 +73,18 @@ const updateMessage = async (req, res) => {
       { user_id, content, img, status },
       { new: true }
     );
+
     if (!updatedMessage) {
-      return res.status(404).json({ message: 'Message not found' });
+      return res.status(404).json({ message: 'Message not found or no changes made' });
     }
 
-    // Phát sự kiện qua Socket.IO
-    const io = req.app.get('io'); // Lấy đối tượng io từ app
-    io.emit('updateMessage', updatedMessage); // Phát sự kiện "updateMessage" tới tất cả client
+    // Phát sự kiện qua Socket.IO nếu io đã được khởi tạo
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('updateMessage', updatedMessage);
+    } else {
+      console.error('Socket.IO is not initialized');
+    }
 
     res.status(200).json(updatedMessage);
   } catch (error) {
@@ -99,9 +103,13 @@ const deleteMessage = async (req, res) => {
       return res.status(404).json({ message: 'Message not found' });
     }
 
-    // Phát sự kiện qua Socket.IO
-    const io = req.app.get('io'); // Lấy đối tượng io từ app
-    io.emit('deleteMessage', { id: messageId }); // Phát sự kiện "deleteMessage" tới tất cả client
+    // Phát sự kiện qua Socket.IO nếu io đã được khởi tạo
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('deleteMessage', { id: messageId });
+    } else {
+      console.error('Socket.IO is not initialized');
+    }
 
     res.status(200).json({ message: 'Message deleted successfully' });
   } catch (error) {

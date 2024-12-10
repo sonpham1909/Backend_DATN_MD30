@@ -6,7 +6,6 @@ const replySchema = new mongoose.Schema(
     message_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Message', // Tham chiếu đến Message
-      required: true,
     },
     user_id: {
       type: mongoose.Schema.Types.ObjectId,

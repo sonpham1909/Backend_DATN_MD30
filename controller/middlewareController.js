@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken'); // Thêm dòng này
 const User = require('../models/User');
 const Role = require('../models/Role');
+const UserRole = require('../models/UserRole');
 const middlewareController = {
     verifyToken: async (req, res, next) => {
         const authHeader = req.headers.authorization;
@@ -10,14 +11,23 @@ const middlewareController = {
                 if (err) {
                     return res.status(403).json("Token is not valid");
                 }
-
+    
                 // Tìm người dùng trong cơ sở dữ liệu
-                const foundUser = await User.findById(user.id);
-                if (!foundUser) {
-                    return res.status(404).json({ message: 'User not found' });
+                const foundUser   = await User.findById(user.id);
+                if (!foundUser  ) {
+                    return res.status(404).json({ message: 'User  not found' });
                 }
-
-                req.user = foundUser; // Lưu thông tin người dùng vào req
+    
+                const roles = await UserRole.find({ userId: foundUser ._id });
+                const rolesNames = await Promise.all(roles.map(role => Role.findById(role.roleId)));
+    
+                // Chỉ lấy tên vai trò
+                const roleNames = rolesNames.map(role => role.name); // Lấy tên vai trò
+    
+                // Gán thông tin người dùng và danh sách tên vai trò vào req.user
+                req.user = { id: foundUser ._id, ...foundUser .toObject(), roles: roleNames }; // Thay đổi _id thành id
+                console.log(req.user);
+                
                 next();
             });
         } else {
@@ -25,11 +35,16 @@ const middlewareController = {
         }
     },
     verifyAdminToken: async (req, res, next) => {
+        
         middlewareController.verifyToken(req, res, () => {
-            const roles = req.user.roles; // Lấy thông tin vai trò từ req.user
+            // Lấy thông tin vai trò từ req.user
+            const roles = req.user.roles;
+            
            
 
             if (!roles || !roles.includes('admin')) { // Kiểm tra xem có vai trò admin không
+                console.log('Access denied. Admins only.');
+                
                 return res.status(403).json({ message: 'Access denied. Admins only.' });
             }
             next();

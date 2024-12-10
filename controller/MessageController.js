@@ -10,7 +10,7 @@ const createMessage = async (req, res) => {
       return res.status(401).json({ message: 'Unauthorized: User not found' });
     }
 
-    const userId = req.user._id; 
+    const userId = req.user._id;
     const newMessage = new Message({
       user_id: userId,
       content,
@@ -19,10 +19,39 @@ const createMessage = async (req, res) => {
     });
 
     const savedMessage = await newMessage.save();
+    const io = req.app.locals.io;
+
+    if (io) {
+
+      const user = await User.findById(req.user._id);
+
+      if (user && user.socketId) {
+        const socketId = user.socketId;
+        console.log('Socket ID:', socketId); // Log socket ID để kiểm tra
+
+        io.emit('sendMessageToAdmins', {
+          _id:savedMessage._id,
+          user_id: userId,
+          content,
+          img: req.imageUrls || [], // Đảm bảo img là mảng, nếu không có thì gán mảng rỗng
+          status,
+          createdAt:savedMessage.createdAt
+        });
+
+        console.log(`Notification sent to admin`);
+      } else {
+        console.error(`Socket ID not found fo`);
+      }
+    }
+
+
+
+
+
+   
 
     // Phát sự kiện qua Socket.IO
-    const io = req.app.get('io'); // Lấy đối tượng io từ app
-    io.emit('newMessage', savedMessage); // Phát sự kiện "newMessage" tới tất cả client
+
 
     res.status(201).json(savedMessage);
   } catch (error) {
@@ -47,11 +76,11 @@ const getMessageById = async (req, res) => {
   const messageId = req.params.id;
 
   try {
-    const user=await User.findById(req.user.id);
+    const user = await User.findById(req.user.id);
     if (!user) {
       return res.status(404).json({ message: 'user not found' });
     }
-    const message = await Message.find({user_id:req.user.id})
+    const message = await Message.find({ user_id: req.user.id })
 
     if (!message) {
       return res.status(404).json({ message: 'Message not found' });
@@ -80,7 +109,7 @@ const updateMessage = async (req, res) => {
 
     // Phát sự kiện qua Socket.IO
     const io = req.app.get('io'); // Lấy đối tượng io từ app
-    io.emit('updateMessage', updatedMessage); // Phát sự kiện "updateMessage" tới tất cả client
+
 
     res.status(200).json(updatedMessage);
   } catch (error) {

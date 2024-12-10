@@ -125,7 +125,25 @@ const SubCategoryController = {
             res.status(500).json({ message: 'Server error', error: error.message });
         }
     },
+    searchSubCategories: async (req, res) => {
+        try {
+            const searchQuery = req.query.name || '';  // Lấy từ query parameter, mặc định là chuỗi rỗng
 
+            // Tìm kiếm subcategories theo tên, có thể thay đổi nếu muốn tìm kiếm thêm các trường khác
+            const subCategories = await SubCategory.find({
+                name: { $regex: searchQuery, $options: 'i' } // Tìm kiếm không phân biệt chữ hoa hay thường
+            }).populate('id_category');
+
+            if (subCategories.length === 0) {
+                return res.status(404).json({ message: 'No sub-categories found matching the search criteria' });
+            }
+
+            res.status(200).json(subCategories);
+        } catch (error) {
+            console.error('Error searching sub-categories:', error);
+            res.status(500).json({ message: 'Error searching sub-categories', error: error.message });
+        }
+    }
 }
 
 module.exports = SubCategoryController;

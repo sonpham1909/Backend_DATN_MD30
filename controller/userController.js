@@ -320,10 +320,9 @@ const userController = {
             console.error('Error fetching user roles:', error);
             throw new Error('Could not fetch user roles');
         }
-    },
-    sendResetPasswordEmail: async (req, res) => {
+    }, sendResetPasswordEmail: async (req, res) => {
         const OTP_EXPIRATION_TIME = 15 * 60 * 1000; // 15 phút
-        const OTP_REQUEST_DELAY = 30 * 1000; // 30 giây
+        const OTP_REQUEST_DELAY = 60 * 1000; // 60 giây (1 phút)
         const { email } = req.body;
 
         try {
@@ -335,7 +334,10 @@ const userController = {
 
             const now = Date.now();
             if (user.otpRequestedAt && now - user.otpRequestedAt < OTP_REQUEST_DELAY) {
-                return res.status(429).json({ message: 'Vui lòng đợi 30 giây trước khi yêu cầu OTP khác' });
+                const remainingTime = Math.ceil((OTP_REQUEST_DELAY - (now - user.otpRequestedAt)) / 1000);
+                return res.status(429).json({
+                    message: `Vui lòng đợi ${remainingTime} giây trước khi yêu cầu OTP khác`,
+                });
             }
 
             const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
@@ -370,7 +372,8 @@ const userController = {
             console.error('Send OTP Error:', error);
             return res.status(500).json({ message: 'Internal server error' });
         }
-    },
+    }
+    ,
     // Xác thực OTP người dùng nhập vào (không cần kiểm tra email nữa)
     verifyOtp: async (req, res) => {
         const { otp } = req.body;

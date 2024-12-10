@@ -21,8 +21,7 @@ const createMessage = async (req, res) => {
     const savedMessage = await newMessage.save();
 
     // Phát sự kiện qua Socket.IO
-    const io = req.app.get('io'); // Lấy đối tượng io từ app
-    io.emit('newMessage', savedMessage); // Phát sự kiện "newMessage" tới tất cả client
+    
 
     res.status(201).json(savedMessage);
   } catch (error) {

@@ -14,8 +14,12 @@ const authController = {
             // Kiểm tra mã xác thực
             const verification = await VerificationCode.findOne({ email, code });
             if (!verification || verification.expiry < Date.now()) {
+                console.log('Bạn chưa xác thực mã hoặc mã đã hết hạn!');
+                
                 return res.status(400).json({ message: 'Bạn chưa xác thực mã hoặc mã đã hết hạn!' });
             }
+
+            await verification.deleteOne();
     
             // Tạo salt và hash mật khẩu
             const salt = await bcrypt.genSalt(10);

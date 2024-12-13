@@ -2,7 +2,7 @@
 const Message = require('../models/Message');
 const User = require('../models/User');
 const Reply = require('../models/Reply'); // Nhập mô hình Reply
-const ReplyController = require('../../DATN/controller/ReplyController');
+
 
 // Tạo tin nhắn mới
 const createMessage = async (req, res) => {
@@ -40,13 +40,33 @@ const createMessage = async (req, res) => {
       });
 
       // Lưu phản hồi tự động
-      const savedAutoReply = await autoReply.save();
+      await autoReply.save();
 
       // Phát sự kiện phản hồi tự động
       if (io) {
-        io.emit('newReply', savedAutoReply);
+        const user = await User.findById(userId);
+
+      if (user && user.socketId) {
+        const socketId = user.socketId;
+        console.log('Socket ID:', socketId); // Log socket ID để kiểm tra
+
+        io.to(socketId).emit('sendMessageToUsers', {
+          _id:autoReply._id,
+          user_id:user._id,
+          content:autoReply.content,
+          img: [], // Đảm bảo img là mảng, nếu không có thì gán mảng rỗng
+          status:autoReply.status,
+          createdAt:autoReply.createdAt,
+          message_id: autoReply.message_id
+        });
+        console.log('Tin nhanws tuj dong:', autoReply.content);
+
+       
+       
+        
+
       }
-    }
+    }}
 
     // Phát sự kiện cho tin nhắn mới
     if (io) {

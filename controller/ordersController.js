@@ -1000,7 +1000,7 @@ const ordersController = {
 
       const title = 'Thông báo đơn hàng';
       const message = `Đơn hàng của bạn đã đặt thành công! Mã đơn hàng của bạn là: Order ID ${newOrder._id}`;
-      await notificationCotroller.sendPersonalNotification(userId, title, message);
+      
 
       //Theem vào CSDL
       const notification = new Notification({

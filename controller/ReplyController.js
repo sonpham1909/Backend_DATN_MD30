@@ -1,5 +1,9 @@
 // controllers/ReplyController.js
+const Message = require('../models/Message');
+const Notification = require('../models/Notification');
+const NotificationUser = require('../models/NotificationUser');
 const Reply = require('../models/Reply');
+const User = require('../models/User');
 
 // Tạo phản hồi mới
 const createReply = async (req, res) => {
@@ -13,8 +17,70 @@ const createReply = async (req, res) => {
       img:req.imageUrls||[],// neu khong co anh thi de rong
       status,
     });
-
     const savedReply = await newReply.save();
+
+    const message = await Message.findById(message_id);
+    if(!message){
+      return res.status(404).json({ message: "Message not found" });
+    }
+    const userTo = await User.findById(message.user_id);
+    if(!userTo){
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    let title= 'Bạn có tin nhắn từ StyleLife nhé!'
+  
+    
+
+    const notification = new Notification({
+      title,
+      message:'xem ngay nhé',
+      type: 'personal',
+
+    });
+    await notification.save();
+
+    const io  = req.app.locals.io;
+    if (io) {
+
+      const user = await User.findById(user_id);
+
+      if (user && userTo.socketId) {
+        const socketId = userTo.socketId;
+        console.log('Socket ID:', socketId); // Log socket ID để kiểm tra
+
+        io.to(socketId).emit('sendMessageToUsers', {
+          _id:savedReply._id,
+          user_id:user._id,
+          content,
+          img: req.imageUrls || [], // Đảm bảo img là mảng, nếu không có thì gán mảng rỗng
+          status,
+          createdAt:savedReply.createdAt,
+          message_id
+        });
+        const notificationUser = new NotificationUser({
+          notification_id: notification._id,
+          user_id: userTo._id,
+          status: 'unread',
+        });
+        await notificationUser.save();
+
+       
+        io.to(socketId).emit('pushnotification', {
+          ...notification._doc,
+          ...notificationUser._doc
+        });
+
+        console.log(`Notification sent to admin`);
+      } else {
+        console.error(`Socket ID not found fo`);
+      }
+    }
+
+
+
+
+    
     res.status(201).json(savedReply);
   } catch (error) {
     console.error('Error while creating reply:', error);

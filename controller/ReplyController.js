@@ -1,6 +1,6 @@
 // controllers/ReplyController.js
 const Reply = require('../models/Reply');
-
+const User = require('../models/User');
 // Tạo phản hồi mới
 const createReply = async (req, res) => {
   try {

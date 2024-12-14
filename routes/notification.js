@@ -19,6 +19,10 @@ router.get('/getNotificationUser',
     middlewareController.verifyToken,
     notificationCotroller.getUserNotifications
 );
+router.get('/getAllNotifi',
+    middlewareController.verifyToken,
+    notificationCotroller.getAllNotifi
+);
 
 
 module.exports = router;

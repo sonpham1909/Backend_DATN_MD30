@@ -6,14 +6,15 @@ const User = require("../models/User");
 const notificationCotroller = {
     getAllNotifi: async (req, res) => {
         try {
-            const notifi = await NotificationUser.find();
+            // Lấy tất cả thông báo có type là 'general'
+            const notifi = await Notification.find({ type: 'general' });
             res.status(200).json(notifi);
         } catch (error) {
             console.error('Get all notifi error: ', error);
-            res.status(500).json({ message: 'Error get notifi user status', error: error.message });
-
+            res.status(500).json({ message: 'Error fetching general notifications', error: error.message });
         }
     },
+
     sendPersonalNotification: async (userId, title, message) => {
         try {
             // Tạo thông báo trong bảng Notification

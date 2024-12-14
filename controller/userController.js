@@ -169,23 +169,28 @@ const userController = {
     //delete user
     blockUser: async (req, res) => {
         const userId = req.params.id;
-
+        const currentUserId = req.user.id; // ID của người dùng đang đăng nhập
+    
         try {
-            // Tìm và xóa người dùng theo ID
-            const blockUser = await User.findById(userId);
-
-            if (!blockUser) {
-                return res.status(404).json({ message: 'User not found' });
+            // Kiểm tra xem người dùng có đang cố gắng chặn chính mình không
+            if (userId === currentUserId) {
+                return res.status(403).json({ message: 'Bạn không thể chặn chính mình' });
             }
-
-           blockUser.block = !blockUser.block; //cập nhật trạng thái
+    
+            // Tìm người dùng để chặn theo ID
+            const blockUser = await User.findById(userId);
+    
+            if (!blockUser) {
+                return res.status(404).json({ message: 'Người dùng không tồn tại' });
+            }
+    
+            // Cập nhật trạng thái chặn
+            blockUser.block = !blockUser.block; // Đảo ngược trạng thái chặn
             await blockUser.save();
-
-            
-
-            res.status(200).json({ message: 'User change blocked successfully', user: blockUser });
+    
+            res.status(200).json({ message: 'Đã thay đổi trạng thái chặn người dùng thành công', user: blockUser });
         } catch (error) {
-            res.status(500).json({ message: 'Error blocking user', error: error.message });
+            res.status(500).json({ message: 'Lỗi khi chặn người dùng', error: error.message });
         }
     },
 

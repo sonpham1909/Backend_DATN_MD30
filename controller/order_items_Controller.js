@@ -73,7 +73,7 @@ const order_items_controller = {
             const { startDate, endDate } = req.query;
     
             // Chuyển đổi ngày từ chuỗi sang định dạng Date
-            const start = new Date(startDate);
+            const start = new Date(startDate+1);
             const end = new Date(endDate);
     
          

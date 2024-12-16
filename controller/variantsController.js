@@ -166,15 +166,11 @@ const variantsController = {
 
  updateVariantQuantity: async (req, res) => {
   try {
-    const { product_id } = req.params;
-    const { size, color, quantity } = req.body;
+    const { variant_id } = req.params;
+    const { size, quantity } = req.body;
 
     // Find the variant based on product_id, color, and size
-    const variant = await Variant.findOne({
-      product_id,
-      color,
-      'sizes.size': size,
-    });
+    const variant = await Variant.findById(variant_id)
 
     if (!variant) {
       return res.status(404).json({ message: 'Variant not found' });
@@ -183,7 +179,7 @@ const variantsController = {
     // Update the quantity for the specific size
     const sizeIndex = variant.sizes.findIndex(s => s.size === size);
     if (sizeIndex !== -1) {
-      variant.sizes[sizeIndex].quantity += quantity;
+      variant.sizes[sizeIndex].quantity = quantity;
     }
 
     await variant.save();

@@ -8,6 +8,8 @@ const removeAccents = require("remove-accents");
 const Review = require("../models/Review");
 const Variant = require('../models/Variants');
 const { default: mongoose } = require('mongoose');
+const Product_sub_categories = require('../models/Product_sub_categories');
+const Favorite = require('../models/Favorite');
 
 
 function removeDiacritics(str) {
@@ -331,18 +333,24 @@ const productController = {
     const { variantId } = req.body;
 
     try {
-      // Tìm sản phẩm theo productId
-      const variant = await Variant.findByIdAndDelete(variantId);
+        // Find the variant by variantId
+        const variant = await Variant.findById(variantId);
+        console.log(variantId);
+        
+        if (!variant) {
+            console.log('Variant not found');
+            return res.status(404).json({ message: "Variant not found" });
+        }
 
+        // Delete the variant
+        await Variant.findByIdAndDelete(variantId);
 
-      return res
-        .status(200)
-        .json({ message: "Biến thể đã được xóa thành công" });
+        res.status(200).json({ message: "Biến thể đã được xóa thành công" });
     } catch (error) {
-      console.error("Error deleting variant:", error);
-      return res.status(500).json({ message: "Đã xảy ra lỗi" });
+        console.error("Error deleting variant:", error);
+        return res.status(500).json({ message: "Đã xảy ra lỗi" });
     }
-  },
+},
   updateProduct: async (req, res) => {
     const { id } = req.params; // ID sản phẩm từ tham số URL
     const updatedData = {};
@@ -452,6 +460,8 @@ const productController = {
       // Xóa sản phẩm khỏi cơ sở dữ liệu
       await product.deleteOne();
       await Product_sub_categories.deleteMany({ product_id: id });
+      await Favorite.deleteMany({ productId: id });
+
       return res
         .status(200)
         .json({ message: "Sản phẩm đã được xóa thành công" });

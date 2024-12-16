@@ -1244,6 +1244,11 @@ const ordersController = {
         return res.status(404).json({ message: "Order not found" });
       }
 
+      const orderItems = await Order_items.find({ order_id: orderId });
+      if (!orderItems) {
+        return res.status(404).json({ message: "Order items not found" });
+      }
+
       // Nếu đơn hàng ở trạng thái "Đã xác nhận", chuyển sang "Đang chờ hủy"
       if (order.status === "ready_for_shipment") {
         order.status = "waiting_cancel";
@@ -1261,6 +1266,18 @@ const ordersController = {
         order.status = "canceled";
         order.cancelReason = cancelReason; // Lưu lý do hủy
         await order.save();
+        await Promise.all(
+          orderItems.map(async (item) => {
+            await Variant.findOneAndUpdate(
+              {
+                product_id: item.product_id,
+                color: item.color,
+                "sizes.size": item.size,
+              },
+              { $inc: { "sizes.$.quantity": +item.quantity } } // Giảm số lượng biến thể
+            );
+          })
+        );
         return res.status(200).json({ message: "Order has been canceled successfully" });
       } else {
         return res.status(400).json({ message: "Order cannot be canceled in the current status" });

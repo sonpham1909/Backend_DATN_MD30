@@ -643,6 +643,7 @@ const notificationCotroller = require("./notificationCotroller");
 const Notification = require("../models/Notification");
 const NotificationUser = require("../models/NotificationUser");
 const User = require("../models/User");
+const { default: mongoose } = require("mongoose");
 
 const ordersController = {
   getAllOrders: async (req, res) => {
@@ -688,10 +689,24 @@ const ordersController = {
       let totalAmount = 0;
       let total_Products = 0;
 
+      const address = await Address.findById(address_id);
+      if (!address) {
+        return res.status(404).json({ message: "Không tìm thấy địa chỉ" });
+      }
+
+
       // Tạo đơn hàng trước để lấy orderId
       const order = new Order({
         user_id,
-        address_id,
+
+        recipientName: address.recipientName,
+        recipientPhone: address.recipientPhone,
+        addressDetail: {
+          street: address.addressDetail.street,
+          ward: address.addressDetail.ward,
+          district: address.addressDetail.district,
+          city: address.addressDetail.city,
+        },
         total_products: total_Products,
         shipping_method_id: shipping_method_id,
         payment_method_id: payment_method_id,
@@ -926,6 +941,9 @@ const ordersController = {
       return res.status(400).json({ message: "Thiếu thông tin cần thiết hoặc giỏ hàng trống." });
     }
 
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
     try {
       // Lấy chi tiết địa chỉ
       const address = await Address.findById(address_id);
@@ -944,6 +962,26 @@ const ordersController = {
       }
 
       const paymentStatus = paymentMethod.name === "MoMo" ? "pending" : "unpaid";
+
+      // Kiểm tra số lượng sản phẩm
+      for (const cartItem of cartItems) {
+        const variant = await Variant.findOne({
+          product_id: cartItem.product_id,
+          color: cartItem.color,
+          "sizes.size": cartItem.size,
+        }).session(session);
+
+        if (variant) {
+          const sizeIndex = variant.sizes.findIndex((s) => s.size === cartItem.size);
+          if (sizeIndex > -1) {
+            if (variant.sizes[sizeIndex].quantity < cartItem.quantity) {
+              await session.abortTransaction();
+              return res.status(400).json({ message: `Số lượng sản phẩm ${cartItem.product_id} không đủ` });
+            }
+          }
+        }
+      }
+
 
       // Tạo đơn hàng mới
       const newOrder = new Order({
@@ -1000,7 +1038,7 @@ const ordersController = {
 
       const title = 'Thông báo đơn hàng';
       const message = `Đơn hàng của bạn đã đặt thành công! Mã đơn hàng của bạn là: Order ID ${newOrder._id}`;
-      
+
 
       //Theem vào CSDL
       const notification = new Notification({
@@ -1043,9 +1081,13 @@ const ordersController = {
       }
 
       res.status(201).json({ message: "Đặt hàng thành công", order: newOrder });
+      await session.commitTransaction();
     } catch (error) {
+      await session.abortTransaction();
       console.error("Error creating order:", error);
       res.status(500).json({ message: "Lỗi khi tạo đơn hàng", error: error.message });
+    } finally {
+      session.endSession();
     }
   },
 

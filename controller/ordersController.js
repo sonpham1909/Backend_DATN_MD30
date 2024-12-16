@@ -688,10 +688,24 @@ const ordersController = {
       let totalAmount = 0;
       let total_Products = 0;
 
+      const address = await Address.findById(address_id);
+      if (!address) {
+        return res.status(404).json({ message: "Không tìm thấy địa chỉ" });
+      }
+
+
       // Tạo đơn hàng trước để lấy orderId
       const order = new Order({
         user_id,
-        address_id,
+      
+        recipientName: address.recipientName,
+        recipientPhone: address.recipientPhone,
+        addressDetail: {
+          street: address.addressDetail.street,
+          ward: address.addressDetail.ward,
+          district: address.addressDetail.district,
+          city: address.addressDetail.city,
+        },
         total_products: total_Products,
         shipping_method_id: shipping_method_id,
         payment_method_id: payment_method_id,

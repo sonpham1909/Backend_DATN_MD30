@@ -201,9 +201,9 @@ const config = {
   partnerCode: "MOMO",
   redirectUrl: "yourapp://payment-success",
 
-  ipnUrl: "https://6b45-2401-d800-7330-1a24-7da3-c5b7-aacf-b011.ngrok-free.app/v1/Payment_Momo/callback",
+  ipnUrl: "https://e29a-42-118-89-117.ngrok-free.app/v1/Payment_Momo/callback",
 
-  requestType: "payWithATM",
+  requestType: 'payWithMethod',
   lang: "vi",
 };
 

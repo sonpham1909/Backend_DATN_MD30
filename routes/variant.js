@@ -28,9 +28,9 @@ router.post(
   variantsController.createVariantVer2
 );
 
-router.put('/:product_id/update-quantity', 
+router.put('/:variant_id/update-quantity', 
   middlewareController.verifyToken,
   variantsController.updateVariantQuantity);
-router.delete('/deleteVariant',middlewareController.verifyToken,middlewareController.verifyAdminToken,productController.deleteVariant);
+router.post('/deleteVariant',middlewareController.verifyToken,middlewareController.verifyAdminToken,productController.deleteVariant);
 
 module.exports = router;

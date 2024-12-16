@@ -328,33 +328,12 @@ const productController = {
   },
   
   deleteVariant: async (req, res) => {
-    const { productId, variantId } = req.params;
+    const { variantId } = req.body;
 
     try {
       // Tìm sản phẩm theo productId
-      const product = await Product.findById(productId);
+      const variant = await Variant.findByIdAndDelete(variantId);
 
-      if (!product) {
-        console.log("Sản phẩm không tồn tại");
-
-        return res.status(404).json({ message: "Sản phẩm không tồn tại" });
-      }
-
-      // Tìm biến thể trong mảng variants và xóa nó
-      const variantIndex = product.variants.findIndex(
-        (variant) => variant._id.toString() === variantId
-      );
-
-      if (variantIndex === -1) {
-        console.log("Biến thể ko tồn tại");
-        return res.status(404).json({ message: "Biến thể không tồn tại" });
-      }
-
-      // Xóa biến thể
-      product.variants.splice(variantIndex, 1);
-
-      // Lưu sản phẩm đã được cập nhật
-      await product.save();
 
       return res
         .status(200)

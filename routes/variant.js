@@ -5,6 +5,7 @@ const {
   uploadphoto,
   resizeAndUploadImage,
 } = require("../controller/imageUploadMiddleware");
+const productController = require("../controller/productController");
 var router = express.Router();
 
 router.get("/", variantsController.getAllVariants);
@@ -30,6 +31,6 @@ router.post(
 router.put('/:product_id/update-quantity', 
   middlewareController.verifyToken,
   variantsController.updateVariantQuantity);
-
+router.delete('/deleteVariant',middlewareController.verifyToken,middlewareController.verifyAdminToken,productController.deleteVariant);
 
 module.exports = router;

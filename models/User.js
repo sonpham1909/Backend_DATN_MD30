@@ -55,7 +55,15 @@ const userSchema = new mongoose.Schema({
         type: String,
     },
 
-
+    // 🚀 Hỗ trợ tính năng reset mật khẩu
+    otp: {
+        type: String  // OTP ngẫu nhiên gửi về email
+    },
+    otpExpiresAt: {
+        type: Date   // Thời gian OTP hết hạn
+    }, otpRequestedAt: {
+        type: Date,
+    },
 
 }, { timestamps: true });
 module.exports = mongoose.model('User', userSchema);

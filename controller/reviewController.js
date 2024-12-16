@@ -12,7 +12,7 @@ const ReviewController = {
       const userId = req.user.id; // Lấy user_id từ xác thực của người dùng
       const { product_id, rating, comment, color, size, image_variant } = req.body;
 
-
+      console.log("Thiếu thông tin cần thiết:",product_id +" "+rating+" "+comment+" "+color+" "+size+" "+image_variant);
   
       // Kiểm tra nếu thông tin rating hoặc product_id không tồn tại
       if (!product_id || !rating) {

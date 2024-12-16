@@ -6,7 +6,6 @@ const replySchema = new mongoose.Schema(
     message_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Message', // Tham chiếu đến Message
-      required: true,
     },
     user_id: {
       type: mongoose.Schema.Types.ObjectId,
@@ -16,7 +15,10 @@ const replySchema = new mongoose.Schema(
     content: {
       type: String,
     },
-    img: [{ type: String }], // Thay đổi thành mảng để lưu trữ nhiều hình ảnh,
+    img: {
+      type: [String], // Đảm bảo img là mảng các chuỗi
+    default: [],   
+    },
     status: {
       type: Boolean, // Trạng thái đã xem
       default: false,

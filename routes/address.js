@@ -1,6 +1,6 @@
 var express = require('express');
 const middlewareController = require('../controller/middlewareController');
-const AddressController = require('../controller/addressController'); // Import AddressController
+const AddressController = require('../controller/AddressController'); // Import AddressController
 var router = express.Router();
 
 // Tạo địa chỉ giao hàng
